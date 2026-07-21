@@ -1,64 +1,122 @@
-import { useState } from 'react';
-import type { Tab, Recipe } from './types';
-import BatchRecipeCalculator from './components/BatchRecipeCalculator';
-import CookedRiceCalculator from './components/CookedRiceCalculator';
-import SavedMeals from './components/SavedMeals';
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'batch', label: 'Batch Recipe' },
-  { id: 'rice', label: 'Cooked Rice' },
-  { id: 'saved', label: 'Saved Meals' },
-];
+import { useState, useCallback } from 'react';
+import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
+import { useRecipes, useCreateRecipe, useDeleteRecipe, useDuplicateRecipe } from '@/features/recipes/hooks';
+import { useIngredients, useCreateIngredient, useDeleteIngredient } from '@/features/ingredients/hooks';
+import { AppLayout } from '@/app/layout/app-layout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import RecipeLibrary from '@/features/recipes/components/RecipeLibrary';
+import RecipeSheet from '@/features/recipes/components/RecipeSheet';
+import DryCookedCalculator from '@/features/dry-to-cooked/components/DryCookedCalculator';
+import IngredientCatalogue from '@/features/ingredients/components/IngredientCatalogue';
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('batch');
-  const [editRecipe, setEditRecipe] = useState<Recipe | undefined>(undefined);
+  const { data: recipes = [] } = useRecipes();
+  const { data: storedIngredients = [] } = useIngredients();
 
-  const handleEdit = (recipe: Recipe) => {
-    setEditRecipe(recipe);
-    setTab('batch');
-  };
+  const saveRecipe = useCreateRecipe();
+  const deleteRecipe = useDeleteRecipe();
+  const duplicateRecipe = useDuplicateRecipe();
+  const saveIngredient = useCreateIngredient();
+  const deleteIngredient = useDeleteIngredient();
 
-  const handleSaved = () => {
-    setEditRecipe(undefined);
-  };
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const handleNew = useCallback(() => {
+    setEditingRecipe(null);
+    setSheetOpen(true);
+  }, []);
+
+  const handleEdit = useCallback((recipe: Recipe) => {
+    setEditingRecipe(recipe);
+    setSheetOpen(true);
+  }, []);
+
+  const handleSave = useCallback(
+    (recipe: Recipe) => {
+      saveRecipe.mutate(recipe, {
+        onSuccess: () => toast.success(editingRecipe ? 'Recipe updated!' : 'Recipe saved!'),
+      });
+    },
+    [saveRecipe, editingRecipe],
+  );
+
+  const handleDuplicate = useCallback(
+    (recipe: Recipe) => {
+      duplicateRecipe.mutate(recipe, {
+        onSuccess: () => toast.success('Recipe duplicated!'),
+      });
+    },
+    [duplicateRecipe],
+  );
+
+  const handleDeleteRecipe = useCallback(
+    (id: string) => {
+      if (confirm('Delete this recipe?')) {
+        deleteRecipe.mutate(id, {
+          onSuccess: () => toast.success('Recipe deleted!'),
+        });
+      }
+    },
+    [deleteRecipe],
+  );
+
+  const handleSaveIngredient = useCallback(
+    (ing: Parameters<typeof saveIngredient.mutate>[0]) => {
+      saveIngredient.mutate(ing, {
+        onSuccess: () => toast.success('Ingredient added!'),
+      });
+    },
+    [saveIngredient],
+  );
+
+  const handleDeleteIngredient = useCallback(
+    (id: string) => {
+      deleteIngredient.mutate(id);
+    },
+    [deleteIngredient],
+  );
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Meal Prep Calculator</h1>
-        <p className="tagline">Plan your batch cooking with precise nutrition</p>
-      </header>
+    <AppLayout>
+      <Tabs defaultValue="recipes" className="space-y-4">
+        <TabsList className="w-full">
+          <TabsTrigger value="recipes" className="flex-1">Recipes</TabsTrigger>
+          <TabsTrigger value="calculator" className="flex-1">Calculator</TabsTrigger>
+          <TabsTrigger value="catalogue" className="flex-1">Catalogue</TabsTrigger>
+        </TabsList>
 
-      <nav className="tabs" role="tablist" aria-label="Calculator sections">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`tab ${tab === t.id ? 'tab--active' : ''}`}
-            onClick={() => {
-              setTab(t.id);
-              if (t.id !== 'batch') setEditRecipe(undefined);
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
-      <main className="main">
-        {tab === 'batch' && (
-          <BatchRecipeCalculator
-            key={editRecipe?.id ?? 'new'}
-            editRecipe={editRecipe}
-            onSaved={handleSaved}
+        <TabsContent value="recipes">
+          <RecipeLibrary
+            recipes={recipes}
+            onEdit={handleEdit}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDeleteRecipe}
+            onNew={handleNew}
           />
-        )}
-        {tab === 'rice' && <CookedRiceCalculator />}
-        {tab === 'saved' && <SavedMeals onEdit={handleEdit} />}
-      </main>
-    </div>
+        </TabsContent>
+
+        <TabsContent value="calculator">
+          <DryCookedCalculator />
+        </TabsContent>
+
+        <TabsContent value="catalogue">
+          <IngredientCatalogue
+            ingredients={storedIngredients}
+            onSave={handleSaveIngredient}
+            onDelete={handleDeleteIngredient}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <RecipeSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        recipe={editingRecipe}
+        onSave={handleSave}
+        storedIngredients={storedIngredients}
+      />
+    </AppLayout>
   );
 }

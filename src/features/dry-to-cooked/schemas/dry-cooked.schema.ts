@@ -1,0 +1,27 @@
+import { z } from 'zod';
+
+export const dryCookedInputsSchema = z.object({
+  dryWeight: z.number().min(0),
+  dryCaloriesPer100g: z.number().min(0),
+  dryProteinPer100g: z.number().min(0),
+  cookedWeight: z.number().min(0),
+  portions: z.number().int().min(1),
+});
+
+export type DryCookedInputs = z.infer<typeof dryCookedInputsSchema>;
+
+export interface DryCookedTotal {
+  totalCalories: number;
+  totalProtein: number;
+}
+
+export interface DryCookedPer100g {
+  caloriesPer100gCooked: number;
+  proteinPer100gCooked: number;
+}
+
+export interface DryCookedPerPortion {
+  gramsPerPortion: number;
+  caloriesPerPortion: number;
+  proteinPerPortion: number;
+}

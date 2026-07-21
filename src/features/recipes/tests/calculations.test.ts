@@ -4,11 +4,7 @@ import {
   calcIngredientProtein,
   calcBatchTotals,
   calcPerPortion,
-  calcRiceTotals,
-  calcRicePer100g,
-  calcRicePerPortion,
-  round1dp,
-} from './calculations';
+} from '../utils/calculations';
 
 describe('calcIngredientCalories', () => {
   it('calculates calories from weight and per-100g value', () => {
@@ -43,8 +39,8 @@ describe('calcBatchTotals', () => {
       { weight: 200, caloriesPer100g: 135, proteinPer100g: 21 },
     ]);
     expect(result.totalWeight).toBe(400);
-    expect(result.totalCalories).toBe(600); // 330 + 270
-    expect(result.totalProtein).toBe(104);  // 62 + 42
+    expect(result.totalCalories).toBe(600);
+    expect(result.totalProtein).toBe(104);
   });
 
   it('returns zeros for empty array', () => {
@@ -67,70 +63,16 @@ describe('calcBatchTotals', () => {
 
 describe('calcPerPortion', () => {
   it('divides totals by portion count', () => {
-    const per = calcPerPortion(
-      { totalWeight: 400, totalCalories: 600, totalProtein: 104 },
-      4,
-    );
+    const per = calcPerPortion({ totalWeight: 400, totalCalories: 600, totalProtein: 104 }, 4);
     expect(per.weightPerPortion).toBe(100);
     expect(per.caloriesPerPortion).toBe(150);
     expect(per.proteinPerPortion).toBe(26);
   });
 
   it('handles 1 portion', () => {
-    const per = calcPerPortion(
-      { totalWeight: 400, totalCalories: 600, totalProtein: 104 },
-      1,
-    );
+    const per = calcPerPortion({ totalWeight: 400, totalCalories: 600, totalProtein: 104 }, 1);
     expect(per.weightPerPortion).toBe(400);
     expect(per.caloriesPerPortion).toBe(600);
     expect(per.proteinPerPortion).toBe(104);
-  });
-});
-
-describe('calcRiceTotals', () => {
-  it('calculates totals from dry weight', () => {
-    const result = calcRiceTotals({
-      dryWeight: 200,
-      dryCaloriesPer100g: 355,
-      dryProteinPer100g: 8,
-      cookedWeight: 460,
-      portions: 4,
-    });
-    expect(result.totalCalories).toBe(710);
-    expect(result.totalProtein).toBe(16);
-  });
-});
-
-describe('calcRicePer100g', () => {
-  it('calculates per-100g values from totals and cooked weight', () => {
-    const result = calcRicePer100g(
-      { totalCalories: 710, totalProtein: 16 },
-      460,
-    );
-    expect(result.caloriesPer100gCooked).toBeCloseTo(154.3478, 3);
-    expect(result.proteinPer100gCooked).toBeCloseTo(3.4782, 3);
-  });
-});
-
-describe('calcRicePerPortion', () => {
-  it('calculates per-portion values', () => {
-    const result = calcRicePerPortion(
-      { totalCalories: 710, totalProtein: 16 },
-      460,
-      4,
-    );
-    expect(result.gramsPerPortion).toBe(115);
-    expect(result.caloriesPerPortion).toBe(177.5);
-    expect(result.proteinPerPortion).toBe(4);
-  });
-});
-
-describe('round1dp', () => {
-  it('rounds to 1 decimal place', () => {
-    expect(round1dp(3.14159)).toBe(3.1);
-    expect(round1dp(2.789)).toBe(2.8);
-    expect(round1dp(100)).toBe(100);
-    expect(round1dp(0.05)).toBe(0.1);
-    expect(round1dp(0.04)).toBe(0);
   });
 });
