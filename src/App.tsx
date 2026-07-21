@@ -18,6 +18,7 @@ import IngredientCatalogue from '@/features/ingredients/components/IngredientCat
 import SettingsPage from '@/features/settings/pages/settings-page';
 import PlannerPage from '@/features/planner/pages/planner-page';
 import NotFoundPage from '@/app/pages/not-found-page';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 export default function App() {
   const { data: recipes = [] } = useRecipes();
@@ -110,6 +111,7 @@ export default function App() {
 
   return (
     <AppShell>
+      <ErrorBoundary>
       <Routes>
         <Route path="/" element={<Navigate to="/recipes" replace />} />
         <Route
@@ -140,6 +142,7 @@ export default function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </ErrorBoundary>
 
       <RecipeSheet
         open={sheetOpen}
