@@ -29,7 +29,7 @@ export function mapRecipeRows(
     const ingredients: Ingredient[] = joined.map((j) => ({
       id: j.riRow.id,
       name: j.ingRow.name,
-      weight: j.riRow.quantity_grams,
+      weight: j.riRow.quantity,
       caloriesPer100g: j.ingRow.calories_per_100g,
       proteinPer100g: j.ingRow.protein_per_100g,
       carbsPer100g: j.ingRow.carbs_per_100g,

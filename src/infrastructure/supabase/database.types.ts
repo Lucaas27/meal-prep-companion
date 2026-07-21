@@ -87,7 +87,9 @@ export interface Database {
           id: string;
           recipe_id: string;
           ingredient_id: string;
-          quantity_grams: number;
+          quantity: number;
+          unit: string;
+          ingredient_unit_conversion_id: string | null;
           position: number;
           created_at: string;
         };
@@ -95,7 +97,9 @@ export interface Database {
           id?: string;
           recipe_id: string;
           ingredient_id: string;
-          quantity_grams: number;
+          quantity: number;
+          unit?: string;
+          ingredient_unit_conversion_id?: string | null;
           position?: number;
           created_at?: string;
         };
@@ -103,7 +107,9 @@ export interface Database {
           id?: string;
           recipe_id?: string;
           ingredient_id?: string;
-          quantity_grams?: number;
+          quantity?: number;
+          unit?: string;
+          ingredient_unit_conversion_id?: string | null;
           position?: number;
           created_at?: string;
         };
