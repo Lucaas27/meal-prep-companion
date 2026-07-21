@@ -1,8 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 import { validateSupabaseConfig } from './config';
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type Database = {};
 
 let clientInstance: ReturnType<typeof createClient<Database>> | null = null;
 
