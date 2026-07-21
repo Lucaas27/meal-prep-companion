@@ -26,7 +26,7 @@ export function RecipeGridView({
     <div className="space-y-3">
       {recipes.map((recipe) => {
         const valid = recipe.ingredients.filter(
-          (i) => i.weight > 0 && i.caloriesPer100g > 0 && i.proteinPer100g > 0,
+          (i) => i.weight > 0,
         );
         const totals = calcBatchTotals(valid);
         const per = recipe.portions > 0 ? calcPerPortion(totals, recipe.portions) : null;

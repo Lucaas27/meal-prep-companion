@@ -65,7 +65,10 @@ export default function App() {
   const handleSave = useCallback(
     (recipe: Recipe) => {
       saveRecipe.mutate(recipe, {
-        onSuccess: () => toast.success(editingRecipe ? 'Recipe updated!' : 'Recipe saved!'),
+        onSuccess: () => {
+          toast.success(editingRecipe ? 'Recipe updated!' : 'Recipe saved!');
+          setSheetOpen(false);
+        },
       });
     },
     [saveRecipe, editingRecipe],

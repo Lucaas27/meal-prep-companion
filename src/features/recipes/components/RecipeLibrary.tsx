@@ -96,13 +96,13 @@ function sortRecipes(recipes: Recipe[], sort: SortValue): Recipe[] {
 }
 
 function getCalories(recipe: Recipe): number {
-  const valid = recipe.ingredients.filter((i) => i.weight > 0 && i.caloriesPer100g > 0 && i.proteinPer100g > 0);
+  const valid = recipe.ingredients.filter((i) => i.weight > 0);
   const totals = calcBatchTotals(valid);
   return recipe.portions > 0 ? totals.totalCalories / recipe.portions : 0;
 }
 
 function getProtein(recipe: Recipe): number {
-  const valid = recipe.ingredients.filter((i) => i.weight > 0 && i.caloriesPer100g > 0 && i.proteinPer100g > 0);
+  const valid = recipe.ingredients.filter((i) => i.weight > 0);
   const totals = calcBatchTotals(valid);
   return recipe.portions > 0 ? totals.totalProtein / recipe.portions : 0;
 }

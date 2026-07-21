@@ -25,7 +25,7 @@ export default function IngredientRow({ ingredient, onChange, onDelete }: Props)
 
   return (
     <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="col-span-2 sm:col-span-1 space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Ingredient
@@ -37,11 +37,12 @@ export default function IngredientRow({ ingredient, onChange, onDelete }: Props)
           <Input type="number" value={ingredient.weight || ''} onChange={(e) => handleChange('weight', e.target.value)} placeholder="200" min="0" step="1" />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Cal / Prot / 100g</Label>
-          <div className="flex gap-1">
-            <Input type="number" value={ingredient.caloriesPer100g || ''} onChange={(e) => handleChange('caloriesPer100g', e.target.value)} placeholder="165" min="0" step="0.1" />
-            <Input type="number" value={ingredient.proteinPer100g || ''} onChange={(e) => handleChange('proteinPer100g', e.target.value)} placeholder="31" min="0" step="0.1" />
-          </div>
+          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Cal / 100g</Label>
+          <Input type="number" value={ingredient.caloriesPer100g || ''} onChange={(e) => handleChange('caloriesPer100g', e.target.value)} placeholder="165" min="0" step="0.1" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Prot / 100g</Label>
+          <Input type="number" value={ingredient.proteinPer100g || ''} onChange={(e) => handleChange('proteinPer100g', e.target.value)} placeholder="31" min="0" step="0.1" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">

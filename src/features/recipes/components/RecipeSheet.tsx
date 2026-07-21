@@ -62,7 +62,7 @@ function makeBlankIngredient(): Ingredient {
 }
 
 function makeIngredientFromCatalogue(si: StoredIngredient): Ingredient {
-  return { id: makeId(), name: si.name, weight: 100, caloriesPer100g: si.caloriesPer100g, proteinPer100g: si.proteinPer100g, carbsPer100g: si.carbsPer100g, fatPer100g: si.fatPer100g };
+  return { id: si.id, name: si.name, weight: 100, caloriesPer100g: si.caloriesPer100g, proteinPer100g: si.proteinPer100g, carbsPer100g: si.carbsPer100g, fatPer100g: si.fatPer100g };
 }
 
 interface FormProps {
@@ -85,7 +85,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
   const [name, setName] = useState(initialName);
   const [portions, setPortions] = useState(initialPortions);
   const [ingredients, setIngredients] = useState<Ingredient[]>(
-    recipe?.ingredients ? recipe.ingredients.map((i) => ({ ...i })) : [makeBlankIngredient()],
+    recipe?.ingredients ? recipe.ingredients.map((i) => ({ ...i })) : [],
   );
   const [tags, setTags] = useState<string[]>([...initialTags]);
   const [tagInput, setTagInput] = useState('');
@@ -150,7 +150,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
   };
 
   const validIngredients = ingredients.filter(
-    (i) => i.weight > 0 && i.caloriesPer100g > 0 && i.proteinPer100g > 0,
+    (i) => i.weight > 0,
   );
 
   const totals = calcBatchTotals(validIngredients);
@@ -172,8 +172,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
       updatedAt: now,
     };
     onSave(saved);
-    onOpenChange(false);
-  }, [canSave, name, portions, ingredients, tags, favourite, notes, recipe?.id, recipe?.createdAt, onSave, onOpenChange]);
+  }, [canSave, name, portions, ingredients, tags, favourite, notes, recipe?.id, recipe?.createdAt, onSave]);
 
   const handleSaveRef = useRef(handleSave);
 
@@ -273,7 +272,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command shouldFilter={false}>
+                <Command>
                   <CommandInput placeholder="Search ingredients..." />
                   <CommandList>
                     <CommandEmpty>No ingredients found.</CommandEmpty>
@@ -318,12 +317,12 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                     onDelete={() => removeIngredient(ing.id)}
                   />
                 ))}
-                <Button variant="outline" size="sm" onClick={() => setIngredients((prev) => [...prev, makeBlankIngredient()])} className="w-full">
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Add Custom Ingredient
-                </Button>
               </>
             )}
+            <Button variant="outline" size="sm" onClick={() => setIngredients((prev) => [...prev, makeBlankIngredient()])} className="w-full">
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add Custom Ingredient
+            </Button>
           </div>
 
           {validIngredients.length > 0 && (
