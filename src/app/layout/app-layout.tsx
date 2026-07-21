@@ -12,8 +12,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
 
+  const visibleItems = user ? NAV_ITEMS : [];
+
   return (
     <div className="min-h-svh flex flex-col md:flex-row">
+      {user && (
       <aside className="hidden md:flex flex-col w-[240px] border-r bg-muted/30 shrink-0">
         <div className="px-5 pt-6 pb-4">
           <h1 className="text-lg font-semibold tracking-tight">Meal Prep Companion</h1>
@@ -21,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 px-2 space-y-0.5">
-          {NAV_ITEMS.map((item) => (
+          {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -73,6 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </div>
       </aside>
+      )}
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="md:hidden text-center pt-6 pb-2 relative">
@@ -100,8 +104,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
 
+        {user && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 border-t bg-background flex items-center justify-around pb-safe">
-          {NAV_ITEMS.map((item) => (
+          {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -119,6 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
         </nav>
+        )}
       </div>
     </div>
   );

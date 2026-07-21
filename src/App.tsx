@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
 import {
   useRecipes,
@@ -20,6 +20,7 @@ import PlannerPage from '@/features/planner/pages/planner-page';
 import NotFoundPage from '@/app/pages/not-found-page';
 import SignInPage from '@/features/auth/pages/sign-in-page';
 import { ProtectedRoute } from '@/app/components/ProtectedRoute';
+import { RootRoute } from '@/app/components/RootRoute';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 export default function App() {
@@ -29,11 +30,13 @@ export default function App() {
 
   useEffect(() => {
     const titles: Record<string, string> = {
+      '/': 'Home',
       '/recipes': 'Recipes',
       '/calculator': 'Calculator',
       '/ingredients': 'Catalogue',
       '/planner': 'Planner',
       '/settings': 'Settings',
+      '/sign-in': 'Sign In',
     };
     const title = titles[location.pathname] || 'Not Found';
     document.title = `${title} | Meal Prep Companion`;
@@ -115,7 +118,7 @@ export default function App() {
     <AppShell>
       <ErrorBoundary>
       <Routes>
-        <Route path="/" element={<Navigate to="/recipes" replace />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route
           path="/recipes"
