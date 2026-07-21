@@ -7,6 +7,10 @@ export const storedIngredientSchema = z.object({
   proteinPer100g: z.number().min(0),
   carbsPer100g: z.number().min(0).default(0),
   fatPer100g: z.number().min(0).default(0),
+  category: z.string().default(''),
+  source: z.enum(['starter', 'custom']).default('custom'),
+  createdAt: z.number().default(() => Date.now()),
+  updatedAt: z.number().default(0),
 });
 
 export const storedIngredientsArraySchema = z.array(storedIngredientSchema);

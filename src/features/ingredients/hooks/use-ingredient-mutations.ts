@@ -17,6 +17,20 @@ export function useCreateIngredient() {
   });
 }
 
+export function useUpdateIngredient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ingredient: StoredIngredient) => {
+      ingredientRepository.save(ingredient);
+      return ingredient;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.ingredients.all });
+    },
+  });
+}
+
 export function useDeleteIngredient() {
   const queryClient = useQueryClient();
 

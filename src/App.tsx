@@ -101,7 +101,7 @@ export default function App() {
           <TabsTrigger value="catalogue" className="flex-1">Catalogue</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="recipes">
+        <TabsContent value="recipes" forceMount className="data-[state=inactive]:hidden">
           <RecipeLibrary
             recipes={recipes}
             onEdit={handleEdit}
@@ -112,11 +112,11 @@ export default function App() {
           />
         </TabsContent>
 
-        <TabsContent value="calculator">
+        <TabsContent value="calculator" forceMount className="data-[state=inactive]:hidden">
           <DryCookedCalculator />
         </TabsContent>
 
-        <TabsContent value="catalogue">
+        <TabsContent value="catalogue" forceMount className="data-[state=inactive]:hidden">
           <IngredientCatalogue
             ingredients={storedIngredients}
             onSave={handleSaveIngredient}

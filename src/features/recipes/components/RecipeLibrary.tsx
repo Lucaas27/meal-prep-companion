@@ -17,11 +17,10 @@ import {
   ChefHat,
   LayoutGrid,
   List,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { RecipeGridView } from './RecipeGridView';
 import { RecipeListView } from './RecipeListView';
+import { Pagination } from '@/shared/components/Pagination';
 
 function loadPageSize(): number {
   const saved = localStorage.getItem(PAGE_SIZE_KEY);
@@ -290,57 +289,19 @@ export default function RecipeLibrary({
         <RecipeListView recipes={paged} {...viewProps} />
       )}
 
-      {sorted.length > PAGE_SIZE_OPTIONS[0] && (
-        <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-muted-foreground whitespace-nowrap">
-              {sorted.length} results &middot; page {safePage} of {totalPages}
-            </p>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(v) => {
-                const n = Number(v);
-                setPageSize(n);
-                savePageSize(n);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-7 w-[70px] text-xs min-h-0">
-                {pageSize}
-              </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 min-h-0"
-              disabled={safePage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Prev
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 min-h-0"
-              disabled={safePage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        totalItems={sorted.length}
+        page={safePage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          savePageSize(n);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }

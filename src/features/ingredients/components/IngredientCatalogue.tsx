@@ -1,14 +1,54 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { StoredIngredient } from '../schemas/ingredient.schema';
-import { makeId } from '@/shared/lib/ids';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
+import { useRecipes } from '@/features/recipes/hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Trash2, Carrot } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { toast } from 'sonner';
+import { Search, Plus, Trash2, Pencil, Carrot } from 'lucide-react';
+import { IngredientFormDialog } from './IngredientFormDialog';
+import { Pagination } from '@/shared/components/Pagination';
+
+const SORT_KEY = 'ingredient-catalogue-sort';
+
+const SORT_OPTIONS = [
+  { value: 'name-asc', label: 'A–Z' },
+  { value: 'name-desc', label: 'Z–A' },
+  { value: 'recent', label: 'Recently Updated' },
+  { value: 'calories-desc', label: 'Highest Calories' },
+  { value: 'calories-asc', label: 'Lowest Calories' },
+  { value: 'protein-desc', label: 'Highest Protein' },
+  { value: 'protein-asc', label: 'Lowest Protein' },
+] as const;
+
+type SortValue = (typeof SORT_OPTIONS)[number]['value'];
+
+const CATEGORIES = ['Protein', 'Carbohydrate', 'Fat', 'Dairy', 'Vegetable', 'Fruit', 'Sauce', 'Other'];
+
+function loadSort(): SortValue {
+  const saved = localStorage.getItem(SORT_KEY);
+  return SORT_OPTIONS.some((o) => o.value === saved) ? (saved as SortValue) : 'name-asc';
+}
+
+function getRecipeUsage(ingredientName: string, recipes: Recipe[]): number {
+  const normalised = ingredientName.trim().toLowerCase();
+  return recipes.filter((r) =>
+    r.ingredients.some((i) => i.name.trim().toLowerCase() === normalised),
+  ).length;
+}
 
 interface Props {
   ingredients: StoredIngredient[];
@@ -17,126 +57,240 @@ interface Props {
 }
 
 export default function IngredientCatalogue({ ingredients, onSave, onDelete }: Props) {
-  const [name, setName] = useState('');
-  const [caloriesPer100g, setCaloriesPer100g] = useState('');
-  const [proteinPer100g, setProteinPer100g] = useState('');
-  const [carbsPer100g, setCarbsPer100g] = useState('');
-  const [fatPer100g, setFatPer100g] = useState('');
+  const { data: recipes = [] } = useRecipes();
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<SortValue>(loadSort);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingIngredient, setEditingIngredient] = useState<StoredIngredient | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const canAdd = name.trim().length > 0;
+  const filtered = useMemo(() => {
+    let list = ingredients;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(
+        (i) =>
+          i.name.toLowerCase().includes(q) ||
+          i.category.toLowerCase().includes(q),
+      );
+    }
+    if (categoryFilter !== 'all') {
+      list = list.filter((i) => (i.category || '') === categoryFilter);
+    }
+    return list;
+  }, [ingredients, search, categoryFilter]);
 
-  const handleAdd = () => {
-    if (!canAdd) return;
-    onSave({
-      id: makeId(),
-      name: name.trim(),
-      caloriesPer100g: Number(caloriesPer100g) || 0,
-      proteinPer100g: Number(proteinPer100g) || 0,
-      carbsPer100g: Number(carbsPer100g) || 0,
-      fatPer100g: Number(fatPer100g) || 0,
-    });
-    setName('');
-    setCaloriesPer100g('');
-    setProteinPer100g('');
-    setCarbsPer100g('');
-    setFatPer100g('');
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    switch (sort) {
+      case 'name-asc':
+        return list.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return list.sort((a, b) => b.name.localeCompare(a.name));
+      case 'recent':
+        return list.sort((a, b) => b.updatedAt - a.updatedAt);
+      case 'calories-desc':
+        return list.sort((a, b) => b.caloriesPer100g - a.caloriesPer100g);
+      case 'calories-asc':
+        return list.sort((a, b) => a.caloriesPer100g - b.caloriesPer100g);
+      case 'protein-desc':
+        return list.sort((a, b) => b.proteinPer100g - a.proteinPer100g);
+      case 'protein-asc':
+        return list.sort((a, b) => a.proteinPer100g - b.proteinPer100g);
+    }
+  }, [filtered, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => sorted.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [sorted, safePage, pageSize],
+  );
+
+  const handleEdit = (ingredient: StoredIngredient) => {
+    setEditingIngredient(ingredient);
+    setFormOpen(true);
+  };
+
+  const handleCreate = () => {
+    setEditingIngredient(null);
+    setFormOpen(true);
+  };
+
+  const handleSave = (ingredient: StoredIngredient) => {
+    onSave(ingredient);
+  };
+
+  const handleDelete = (ingredient: StoredIngredient) => {
+    const usage = getRecipeUsage(ingredient.name, recipes);
+    if (usage > 0) {
+      toast.error(`"${ingredient.name}" is used in ${usage} recipe${usage > 1 ? 's' : ''}. Remove it from those recipes first.`);
+      return;
+    }
+    if (confirm(`Delete "${ingredient.name}"?`)) {
+      onDelete(ingredient.id);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">Catalogue</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Save frequently used ingredients for quick recipe building.
-        </p>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Catalogue</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {ingredients.length} {ingredients.length === 1 ? 'ingredient' : 'ingredients'}
+          </p>
+        </div>
+        <Button onClick={handleCreate} size="sm">
+          <Plus className="h-4 w-4 mr-1.5" />
+          New
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-[15px] font-semibold flex items-center gap-2">
-            <Carrot className="h-4 w-4" />
-            Add Ingredient
-          </CardTitle>
-          <CardDescription>Per 100g nutritional values.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="cat-name" className="text-[13px]">Name</Label>
-              <Input id="cat-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Chicken breast" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cat-cal" className="text-[13px]">Cal / 100g</Label>
-              <Input id="cat-cal" type="number" value={caloriesPer100g} onChange={(e) => setCaloriesPer100g(e.target.value)} placeholder="165" min="0" step="0.1" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cat-prot" className="text-[13px]">Prot / 100g</Label>
-              <Input id="cat-prot" type="number" value={proteinPer100g} onChange={(e) => setProteinPer100g(e.target.value)} placeholder="31" min="0" step="0.1" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cat-carbs" className="text-[13px]">Carbs / 100g</Label>
-              <Input id="cat-carbs" type="number" value={carbsPer100g} onChange={(e) => setCarbsPer100g(e.target.value)} placeholder="0" min="0" step="0.1" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cat-fat" className="text-[13px]">Fat / 100g</Label>
-              <Input id="cat-fat" type="number" value={fatPer100g} onChange={(e) => setFatPer100g(e.target.value)} placeholder="0" min="0" step="0.1" />
-            </div>
-          </div>
-          <Button onClick={handleAdd} disabled={!canAdd} size="sm">
-            <Plus className="h-4 w-4 mr-1.5" />
-            Add to Catalogue
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[160px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search ingredients..."
+            className="pl-9"
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={(v) => {
+          setCategoryFilter(v);
+          setPage(1);
+        }}>
+          <SelectTrigger className="w-[130px] text-xs">
+            {categoryFilter === 'all' ? 'All Categories' : categoryFilter}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="none">Uncategorised</SelectItem>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={sort}
+          onValueChange={(v) => {
+            setSort(v as SortValue);
+            localStorage.setItem(SORT_KEY, v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[140px] text-xs">
+            {SORT_OPTIONS.find((o) => o.value === sort)?.label ?? 'Sort'}
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Separator />
 
       <div>
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          {ingredients.length} {ingredients.length === 1 ? 'ingredient' : 'ingredients'} saved
+          {sorted.length} results
         </h3>
 
-        {ingredients.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <Carrot className="h-10 w-10 text-muted-foreground/40 mb-3" />
-              <p className="text-muted-foreground text-sm">
-                No ingredients yet. Add one above.
-              </p>
-            </CardContent>
-          </Card>
+        {sorted.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-12 text-center">
+            <Carrot className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">
+              {ingredients.length === 0 ? 'No ingredients yet.' : 'No ingredients match your filters.'}
+            </p>
+          </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-1">
-            <div className="space-y-2">
-              {ingredients.map((ing) => (
-                <div key={ing.id} className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/30">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-medium text-sm truncate">{ing.name}</span>
-                    {ing.caloriesPer100g > 0 && (
-                      <Badge variant="secondary" className="text-[11px] font-medium shrink-0">
-                        {ing.caloriesPer100g} kcal
+          <div className="space-y-2">
+              {paged.map((ing) => {
+              const usage = getRecipeUsage(ing.name, recipes);
+              return (
+                <div
+                  key={ing.id}
+                  className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="font-medium text-sm truncate">{ing.name}</span>
+                      <Badge variant={ing.source === 'starter' ? 'secondary' : 'outline'} className="text-[10px] font-medium">
+                        {ing.source === 'starter' ? 'starter' : 'custom'}
                       </Badge>
-                    )}
-                    {ing.proteinPer100g > 0 && (
-                      <Badge variant="secondary" className="text-[11px] font-medium shrink-0">
-                        {ing.proteinPer100g}g prot
-                      </Badge>
-                    )}
+                      {ing.category && (
+                        <span className="text-[11px] text-muted-foreground">{ing.category}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{ing.caloriesPer100g} kcal</span>
+                      <span>{ing.proteinPer100g}g P</span>
+                      <span>{ing.carbsPer100g}g C</span>
+                      <span>{ing.fatPer100g}g F</span>
+                      {usage > 0 && (
+                        <span className="text-muted-foreground/70">
+                          · used in {usage} recipe{usage > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0 ml-2"
-                    onClick={() => onDelete(ing.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(ing)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDelete(ing)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete</TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+              );
+            })}
+          </div>
         )}
+
+        <Pagination
+          totalItems={sorted.length}
+          page={safePage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          pageSizeOptions={[5, 10, 20, 50]}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => {
+            setPageSize(n);
+            setPage(1);
+          }}
+        />
       </div>
+
+      <IngredientFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        ingredient={editingIngredient}
+        onSave={handleSave}
+      />
     </div>
   );
 }
