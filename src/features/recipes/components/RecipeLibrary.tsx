@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { Recipe } from '../schemas/recipe.schema';
 import { calcBatchTotals } from '../utils/calculations';
 import { round1dp } from '@/shared/utils/format';
@@ -17,6 +17,7 @@ import {
   ChefHat,
   LayoutGrid,
   List,
+  Trash2,
 } from 'lucide-react';
 import { RecipeGridView } from './RecipeGridView';
 import { RecipeListView } from './RecipeListView';
@@ -112,6 +113,7 @@ interface Props {
   onEdit: (recipe: Recipe) => void;
   onDuplicate: (recipe: Recipe) => void;
   onDelete: (id: string) => void;
+  onBulkDelete?: (ids: string[]) => void;
   onToggleFavourite: (recipe: Recipe) => void;
   onNew: () => void;
 }
@@ -121,6 +123,7 @@ export default function RecipeLibrary({
   onEdit,
   onDuplicate,
   onDelete,
+  onBulkDelete,
   onToggleFavourite,
   onNew,
 }: Props) {
@@ -129,8 +132,29 @@ export default function RecipeLibrary({
   const [view, setView] = useState<ViewMode>(loadView);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(loadPageSize);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const viewProps = { onEdit, onDuplicate, onDelete, onToggleFavourite };
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (confirm(`Delete ${count} recipe${count > 1 ? 's' : ''}?`)) {
+      if (onBulkDelete) {
+        onBulkDelete(Array.from(selectedIds));
+      } else {
+        for (const id of selectedIds) onDelete(id);
+      }
+      setSelectedIds(new Set());
+    }
+  };
 
   const filtered = useMemo(() => {
     let list = recipes;
@@ -155,6 +179,18 @@ export default function RecipeLibrary({
     () => sorted.slice((page - 1) * pageSize, page * pageSize),
     [sorted, page, pageSize],
   );
+
+  const allSelected = paged.length > 0 && paged.every((r) => selectedIds.has(r.id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paged.map((r) => r.id)));
+    }
+  };
+
+  const viewProps = { onEdit, onDuplicate, onDelete, onToggleFavourite, selectedIds, onToggleSelect: toggleSelect, allSelected, toggleSelectAll };
 
   const stats = useMemo(() => {
     const total = filtered.length;
@@ -232,6 +268,18 @@ export default function RecipeLibrary({
             <span className="block text-lg font-semibold tracking-tight">{stats.avgProtein}g</span>
             <span className="block text-[10px] text-muted-foreground">Avg protein</span>
           </div>
+        </div>
+      )}
+
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border bg-primary/5 p-3">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <div className="flex-1" />
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+          <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+            <Trash2 className="h-4 w-4 mr-1.5" />
+            Delete
+          </Button>
         </div>
       )}
 

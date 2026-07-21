@@ -67,9 +67,9 @@ export const supabaseRecipeRepository = {
 
     if (recipe.ingredients.length > 0) {
       const riRows = recipe.ingredients.map((ing, idx) => ({
-        id: ing.id,
+        id: crypto.randomUUID(),
         recipe_id: recipe.id,
-        ingredient_id: ing.id,
+        ingredient_id: ing.id || null,
         quantity: ing.weight,
         unit: ing.unit || 'g',
         ingredient_unit_conversion_id: ing.unitConversionId || null,

@@ -86,7 +86,7 @@ export interface Database {
         Row: {
           id: string;
           recipe_id: string;
-          ingredient_id: string;
+          ingredient_id: string | null;
           quantity: number;
           unit: string;
           ingredient_unit_conversion_id: string | null;
@@ -96,7 +96,7 @@ export interface Database {
         Insert: {
           id?: string;
           recipe_id: string;
-          ingredient_id: string;
+          ingredient_id: string | null;
           quantity: number;
           unit?: string;
           ingredient_unit_conversion_id?: string | null;
@@ -233,7 +233,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          ingredient_id: string;
+          ingredient_id: string | null;
           unit: string;
           label: string;
           grams_per_unit: number;
@@ -246,7 +246,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id?: string;
-          ingredient_id: string;
+          ingredient_id: string | null;
           unit: string;
           label: string;
           grams_per_unit: number;

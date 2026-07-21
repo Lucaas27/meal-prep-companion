@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Star, Pencil, Copy, Trash2 } from 'lucide-react';
+import { Star, Pencil, Copy, Trash2, Square, CheckSquare } from 'lucide-react';
 import type { RecipeViewProps } from './RecipeGridView';
 
 export function RecipeListView({
@@ -20,12 +20,28 @@ export function RecipeListView({
   onDuplicate,
   onDelete,
   onToggleFavourite,
+  selectedIds,
+  onToggleSelect,
+  allSelected,
+  toggleSelectAll,
 }: RecipeViewProps) {
+  const showSelect = !!onToggleSelect;
   return (
     <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
+            {showSelect && (
+              <TableHead className="w-[30px]">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleSelectAll}>
+                  {allSelected ? (
+                    <CheckSquare className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Square className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </TableHead>
+            )}
             <TableHead className="w-[30px]" />
             <TableHead>Name</TableHead>
             <TableHead className="text-right">kcal</TableHead>
@@ -59,6 +75,17 @@ export function RecipeListView({
                   }
                 }}
               >
+                {showSelect && (
+                  <TableCell className="w-[30px]" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleSelect!(recipe.id)}>
+                      {selectedIds?.has(recipe.id) ? (
+                        <CheckSquare className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Square className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </TableCell>
+                )}
                 <TableCell className="w-[30px]">
                   <Button
                     variant="ghost"

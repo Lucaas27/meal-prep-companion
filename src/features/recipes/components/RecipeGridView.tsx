@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Star, Pencil, Copy, Trash2 } from 'lucide-react';
+import { Star, Pencil, Copy, Trash2, Square, CheckSquare } from 'lucide-react';
 
 export interface RecipeViewProps {
   recipes: Recipe[];
@@ -13,6 +13,10 @@ export interface RecipeViewProps {
   onDuplicate: (recipe: Recipe) => void;
   onDelete: (id: string) => void;
   onToggleFavourite: (recipe: Recipe) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  allSelected?: boolean;
+  toggleSelectAll?: () => void;
 }
 
 export function RecipeGridView({
@@ -21,7 +25,10 @@ export function RecipeGridView({
   onDuplicate,
   onDelete,
   onToggleFavourite,
+  selectedIds,
+  onToggleSelect,
 }: RecipeViewProps) {
+  const showSelect = !!onToggleSelect;
   return (
     <div className="space-y-3">
       {recipes.map((recipe) => {
@@ -55,6 +62,24 @@ export function RecipeGridView({
                     {recipe.portions} portions &middot; {recipe.ingredients.length} ingredients
                   </p>
                 </div>
+
+                {showSelect && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSelect!(recipe.id);
+                    }}
+                  >
+                    {selectedIds?.has(recipe.id) ? (
+                      <CheckSquare className="h-[18px] w-[18px] text-primary" />
+                    ) : (
+                      <Square className="h-[18px] w-[18px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </Button>
+                )}
 
                 <Tooltip>
                   <TooltipTrigger asChild>

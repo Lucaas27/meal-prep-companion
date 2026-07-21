@@ -102,6 +102,14 @@ export default function App() {
     [deleteRecipe],
   );
 
+  const handleBulkDeleteRecipes = useCallback(
+    (ids: string[]) => {
+      ids.forEach((id) => deleteRecipe.mutate(id));
+      toast.success(`${ids.length} recipe${ids.length > 1 ? 's' : ''} deleted!`);
+    },
+    [deleteRecipe],
+  );
+
   const handleSaveIngredient = useCallback(
     (ing: Parameters<typeof saveIngredient.mutate>[0]) => {
       saveIngredient.mutate(ing, {
@@ -134,6 +142,7 @@ export default function App() {
                 onEdit={handleEdit}
                 onDuplicate={handleDuplicate}
                 onDelete={handleDeleteRecipe}
+                onBulkDelete={handleBulkDeleteRecipes}
                 onToggleFavourite={handleToggleFavourite}
                 onNew={handleNew}
               />

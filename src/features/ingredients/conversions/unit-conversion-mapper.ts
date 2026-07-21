@@ -7,7 +7,7 @@ type Row = Database['public']['Tables']['ingredient_unit_conversions']['Row'];
 export function mapConversionRow(row: Row): UnitConversion {
   return {
     id: row.id,
-    ingredientId: row.ingredient_id,
+    ingredientId: row.ingredient_id || '',
     unit: (INGREDIENT_UNITS as readonly string[]).includes(row.unit) ? (row.unit as UnitConversion['unit']) : 'cup',
     label: row.label,
     gramsPerUnit: row.grams_per_unit,

@@ -7,7 +7,7 @@ type IngredientRow = Database['public']['Tables']['ingredients']['Row'];
 
 interface JoinedIngredient {
   riRow: RecipeIngredientRow;
-  ingRow: IngredientRow;
+  ingRow: IngredientRow | null;
 }
 
 export function mapRecipeRows(
@@ -17,8 +17,9 @@ export function mapRecipeRows(
 ): Recipe[] {
   const ingredientsByRid = new Map<string, JoinedIngredient[]>();
   for (const ri of riRows) {
-    const ingRow = ingredientRows.find((i) => i.id === ri.ingredient_id);
-    if (!ingRow) continue;
+    const ingRow = ri.ingredient_id
+      ? ingredientRows.find((i) => i.id === ri.ingredient_id) || null
+      : null;
     const list = ingredientsByRid.get(ri.recipe_id) || [];
     list.push({ riRow: ri, ingRow });
     ingredientsByRid.set(ri.recipe_id, list);
@@ -27,15 +28,15 @@ export function mapRecipeRows(
   return recipeRows.map((row) => {
     const joined = (ingredientsByRid.get(row.id) || []).sort((a, b) => a.riRow.position - b.riRow.position);
     const ingredients: Ingredient[] = joined.map((j) => ({
-      id: j.riRow.id,
-      name: j.ingRow.name,
+      id: j.ingRow?.id || j.riRow.id,
+      name: j.ingRow?.name || 'Unknown',
       weight: j.riRow.quantity,
       unit: j.riRow.unit || 'g',
       unitConversionId: j.riRow.ingredient_unit_conversion_id,
-      caloriesPer100g: j.ingRow.calories_per_100g,
-      proteinPer100g: j.ingRow.protein_per_100g,
-      carbsPer100g: j.ingRow.carbs_per_100g,
-      fatPer100g: j.ingRow.fat_per_100g,
+      caloriesPer100g: j.ingRow?.calories_per_100g || 0,
+      proteinPer100g: j.ingRow?.protein_per_100g || 0,
+      carbsPer100g: j.ingRow?.carbs_per_100g || 0,
+      fatPer100g: j.ingRow?.fat_per_100g || 0,
     }));
 
     return {
