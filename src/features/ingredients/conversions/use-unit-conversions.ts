@@ -13,6 +13,24 @@ export function useUnitConversions(ingredientId: string) {
   });
 }
 
+export function useConversionsForIngredients(ingredientIds: string[]) {
+  const uniqueIds = [...new Set(ingredientIds)].filter(Boolean);
+  return useQuery({
+    queryKey: [...CONV_KEY, 'batch', ...uniqueIds],
+    queryFn: async () => {
+      const map = new Map<string, UnitConversion[]>();
+      await Promise.all(
+        uniqueIds.map(async (id) => {
+          const convs = await unitConversionRepository.listForIngredient(id);
+          map.set(id, convs);
+        }),
+      );
+      return map;
+    },
+    enabled: uniqueIds.length > 0,
+  });
+}
+
 export function useCreateUnitConversion() {
   const qc = useQueryClient();
   return useMutation({

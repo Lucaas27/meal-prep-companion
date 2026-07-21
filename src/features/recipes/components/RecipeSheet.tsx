@@ -51,6 +51,7 @@ import IngredientRow from './IngredientRow';
 import NutritionSummary from './NutritionSummary';
 import { Plus, ShoppingBasket, Star, X, Check, ChevronsUpDown } from 'lucide-react';
 import { normaliseName } from '@/shared/utils/format';
+import { useConversionsForIngredients } from '@/features/ingredients/conversions/use-unit-conversions';
 
 const STARTER_TAGS = [
   'High Protein', 'Low Calorie', 'Meal Prep', 'Quick',
@@ -93,6 +94,9 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
   const [notes, setNotes] = useState(initialNotes);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const ingredientIds = useMemo(() => ingredients.map((ing) => ing.id), [ingredients]);
+  const { data: conversionsMap = new Map() } = useConversionsForIngredients(ingredientIds);
 
   const isDirty = useMemo(() => {
     if (name !== initialName) return true;
@@ -313,6 +317,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                   <IngredientRow
                     key={ing.id}
                     ingredient={ing}
+                    conversions={conversionsMap.get(ing.id) || []}
                     onChange={updateIngredient}
                     onDelete={() => removeIngredient(ing.id)}
                   />

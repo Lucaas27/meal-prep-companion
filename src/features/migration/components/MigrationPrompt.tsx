@@ -10,8 +10,10 @@ import {
 } from '@/application-services/migration-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Database, Download, Trash2 } from 'lucide-react';
+import { Loader2, Database, Download, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
+
+const DISMISS_KEY = 'migration-banner-dismissed';
 
 export function MigrationPrompt() {
   const { user } = useAuth();
@@ -21,13 +23,19 @@ export function MigrationPrompt() {
   const [loading, setLoading] = useState(initialLoading);
   const [migrating, setMigrating] = useState(false);
   const [done, setDone] = useState(false);
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === 'true');
+
+  const handleDismiss = () => {
+    localStorage.setItem(DISMISS_KEY, 'true');
+    setDismissed(true);
+  };
 
   useEffect(() => {
     if (!user || !supabase) return;
     getMigrationStatus().then(setStatus).catch(() => {}).finally(() => setLoading(false));
   }, [user, supabase]);
 
-  if (loading || !status || !status.hasLocalData || status.alreadyMigrated || !user || done) {
+  if (loading || !status || !status.hasLocalData || status.alreadyMigrated || !user || done || dismissed) {
     return null;
   }
 
@@ -58,10 +66,15 @@ export function MigrationPrompt() {
   return (
     <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/50">
       <CardHeader className="pb-2">
-        <CardTitle className="text-[15px] font-semibold flex items-center gap-2">
-          <Database className="h-4 w-4" />
-          Local Data Found
-        </CardTitle>
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-[15px] font-semibold flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Local Data Found
+          </CardTitle>
+          <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1 text-muted-foreground" onClick={handleDismiss}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
         <CardDescription>
           You have data stored in this browser that can be migrated to your account.
         </CardDescription>

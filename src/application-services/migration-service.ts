@@ -6,6 +6,7 @@ import { supabaseRecipeRepository } from '@/features/recipes/repositories/supaba
 import { supabaseCalcRepository } from '@/features/dry-to-cooked/repositories/supabase-calc.repository';
 import { getSupabaseClientOrNull } from '@/infrastructure/supabase/client';
 import { exportBackup } from './backup-service';
+import { storageKeys } from '@/shared/constants/storage-keys';
 
 const MIGRATION_KEY = 'local-storage-v1';
 
@@ -22,8 +23,26 @@ export interface MigrationStatus {
   counts: MigrationCounts;
 }
 
+function checkLocalData(): boolean {
+  return (
+    localStorage.getItem(storageKeys.recipes) !== null ||
+    localStorage.getItem(storageKeys.ingredients) !== null ||
+    localStorage.getItem('meal-prep-dry-cooked-v1') !== null
+  );
+}
+
 export async function getMigrationStatus(): Promise<MigrationStatus> {
   const supabase = getSupabaseClientOrNull();
+
+  const hasLocal = checkLocalData();
+
+  if (!hasLocal) {
+    return {
+      hasLocalData: false,
+      alreadyMigrated: false,
+      counts: { ingredients: 0, recipes: 0, calculations: 0, skipped: 0 },
+    };
+  }
 
   const localIngredients = ingredientRepository.getAll();
   const localRecipes = recipeRepository.getAll();
@@ -32,7 +51,7 @@ export async function getMigrationStatus(): Promise<MigrationStatus> {
   const hasLocalData = localIngredients.length > 0 || localRecipes.length > 0 || localCalculations.length > 0;
 
   let alreadyMigrated = false;
-  if (hasLocalData && supabase) {
+  if (hasLocal && supabase) {
     try {
       const { data } = await supabase
         .from('data_migrations')
