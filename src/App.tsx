@@ -16,6 +16,13 @@ import RecipeSheet from '@/features/recipes/components/RecipeSheet';
 import DryCookedCalculator from '@/features/dry-to-cooked/components/DryCookedCalculator';
 import IngredientCatalogue from '@/features/ingredients/components/IngredientCatalogue';
 
+const TAB_KEY = 'meal-prep-active-tab';
+const DEFAULT_TAB = 'recipes';
+
+function loadTab(): string {
+  return localStorage.getItem(TAB_KEY) || DEFAULT_TAB;
+}
+
 export default function App() {
   const { data: recipes = [] } = useRecipes();
   const { data: storedIngredients = [] } = useIngredients();
@@ -94,7 +101,7 @@ export default function App() {
 
   return (
     <AppLayout>
-      <Tabs defaultValue="recipes" className="space-y-4">
+      <Tabs defaultValue={loadTab()} className="space-y-4" onValueChange={(v) => localStorage.setItem(TAB_KEY, v)}>
         <TabsList className="w-full">
           <TabsTrigger value="recipes" className="flex-1">Recipes</TabsTrigger>
           <TabsTrigger value="calculator" className="flex-1">Calculator</TabsTrigger>

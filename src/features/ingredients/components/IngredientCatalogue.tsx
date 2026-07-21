@@ -24,6 +24,7 @@ import { Pagination } from '@/shared/components/Pagination';
 import { normaliseName } from '@/shared/utils/format';
 
 const SORT_KEY = 'ingredient-catalogue-sort';
+const PAGE_SIZE_KEY = 'ingredient-catalogue-page-size';
 
 const SORT_OPTIONS = [
   { value: 'name-asc', label: 'A–Z' },
@@ -65,7 +66,10 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
   const [formOpen, setFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<StoredIngredient | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => {
+    const saved = localStorage.getItem(PAGE_SIZE_KEY);
+    return saved ? Number(saved) : 10;
+  });
 
   const filtered = useMemo(() => {
     let list = ingredients;
@@ -281,6 +285,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
           onPageChange={setPage}
           onPageSizeChange={(n) => {
             setPageSize(n);
+            localStorage.setItem(PAGE_SIZE_KEY, String(n));
             setPage(1);
           }}
         />
