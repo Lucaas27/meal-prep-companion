@@ -12,11 +12,11 @@ export function getSupabaseClient() {
   const config = validateSupabaseConfig();
   if (!config) {
     throw new Error(
-      'Supabase client not available. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.',
+      'Supabase client not available. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set.',
     );
   }
 
-  clientInstance = createClient<Database>(config.url, config.anonKey, {
+  clientInstance = createClient<Database>(config.url, config.publishableKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,

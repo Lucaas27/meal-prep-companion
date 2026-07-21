@@ -18,6 +18,8 @@ import IngredientCatalogue from '@/features/ingredients/components/IngredientCat
 import SettingsPage from '@/features/settings/pages/settings-page';
 import PlannerPage from '@/features/planner/pages/planner-page';
 import NotFoundPage from '@/app/pages/not-found-page';
+import SignInPage from '@/features/auth/pages/sign-in-page';
+import { ProtectedRoute } from '@/app/components/ProtectedRoute';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 export default function App() {
@@ -114,32 +116,37 @@ export default function App() {
       <ErrorBoundary>
       <Routes>
         <Route path="/" element={<Navigate to="/recipes" replace />} />
+        <Route path="/sign-in" element={<SignInPage />} />
         <Route
           path="/recipes"
           element={
-            <RecipeLibrary
-              recipes={recipes}
-              onEdit={handleEdit}
-              onDuplicate={handleDuplicate}
-              onDelete={handleDeleteRecipe}
-              onToggleFavourite={handleToggleFavourite}
-              onNew={handleNew}
-            />
+            <ProtectedRoute>
+              <RecipeLibrary
+                recipes={recipes}
+                onEdit={handleEdit}
+                onDuplicate={handleDuplicate}
+                onDelete={handleDeleteRecipe}
+                onToggleFavourite={handleToggleFavourite}
+                onNew={handleNew}
+              />
+            </ProtectedRoute>
           }
         />
-        <Route path="/planner" element={<PlannerPage />} />
-        <Route path="/calculator" element={<DryCookedCalculator />} />
+        <Route path="/planner" element={<ProtectedRoute><PlannerPage /></ProtectedRoute>} />
+        <Route path="/calculator" element={<ProtectedRoute><DryCookedCalculator /></ProtectedRoute>} />
         <Route
           path="/ingredients"
           element={
-            <IngredientCatalogue
-              ingredients={storedIngredients}
-              onSave={handleSaveIngredient}
-              onDelete={handleDeleteIngredient}
-            />
+            <ProtectedRoute>
+              <IngredientCatalogue
+                ingredients={storedIngredients}
+                onSave={handleSaveIngredient}
+                onDelete={handleDeleteIngredient}
+              />
+            </ProtectedRoute>
           }
         />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </ErrorBoundary>

@@ -1,22 +1,22 @@
 const requiredVars = [
   'VITE_SUPABASE_URL',
-  'VITE_SUPABASE_ANON_KEY',
+  'VITE_SUPABASE_PUBLISHABLE_KEY',
 ] as const;
 
 export function getSupabaseConfig() {
   const url = (import.meta.env.VITE_SUPABASE_URL as string)?.trim() || undefined;
-  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string)?.trim() || undefined;
+  const publishableKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string)?.trim() || undefined;
 
   const missing = requiredVars.filter((key) => {
     const val = import.meta.env[key];
     return typeof val !== 'string' || val.trim() === '';
   });
 
-  return { url, anonKey, missing };
+  return { url, publishableKey, missing };
 }
 
 export function validateSupabaseConfig() {
-  const { url, anonKey, missing } = getSupabaseConfig();
+  const { url, publishableKey, missing } = getSupabaseConfig();
 
   if (missing.length > 0 && import.meta.env.DEV) {
     console.warn(
@@ -25,9 +25,9 @@ export function validateSupabaseConfig() {
     );
   }
 
-  if (!url || !anonKey) {
+  if (!url || !publishableKey) {
     return null;
   }
 
-  return { url, anonKey };
+  return { url, publishableKey };
 }

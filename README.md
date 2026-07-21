@@ -18,7 +18,7 @@ The app works fully offline with localStorage. To enable remote persistence:
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. Copy `.env.example` to `.env`
-3. Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+3. Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
 
 For local Supabase development:
 

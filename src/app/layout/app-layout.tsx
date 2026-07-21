@@ -3,12 +3,14 @@ import { NavLink } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, LogOut } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { NAV_ITEMS } from '@/shared/constants/nav-items';
+import { useAuth } from '@/infrastructure/supabase/use-auth';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-svh flex flex-col md:flex-row">
@@ -38,7 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t">
+        <div className="px-5 py-4 border-t flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -54,6 +56,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             </TooltipContent>
           </Tooltip>
+          {user && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                  onClick={signOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Sign out</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </aside>
 

@@ -1,10 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import App from '@/App';
+import { useAuth } from '@/infrastructure/supabase/use-auth';
+
+vi.mock('@/infrastructure/supabase/use-auth', () => ({
+  useAuth: vi.fn(),
+}));
+
+beforeEach(() => {
+  vi.mocked(useAuth).mockReturnValue({
+    user: { id: 'test-user', email: 'test@test.com' } as never,
+    session: {} as never,
+    loading: false,
+    signOut: vi.fn().mockResolvedValue(undefined),
+  });
+});
 
 function renderRoute(route: string) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
