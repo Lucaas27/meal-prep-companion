@@ -1,13 +1,16 @@
 import type { Recipe } from '../schemas/recipe.schema';
-import { recipesArraySchema } from '../schemas/recipe.schema';
+import { recipeSchema } from '../schemas/recipe.schema';
 import { storageKeys } from '@/shared/constants/storage-keys';
+import { readValidatedCollection } from '@/shared/lib/storage';
 
 export const recipeRepository = {
   getAll(): Recipe[] {
     try {
-      const raw = localStorage.getItem(storageKeys.recipes);
-      if (!raw) return [];
-      return recipesArraySchema.parse(JSON.parse(raw));
+      return readValidatedCollection(
+        localStorage.getItem(storageKeys.recipes),
+        recipeSchema,
+        [],
+      );
     } catch (err) {
       console.error('Failed to load recipes from storage:', err);
       return [];

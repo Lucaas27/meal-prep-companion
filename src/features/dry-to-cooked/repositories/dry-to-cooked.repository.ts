@@ -1,14 +1,17 @@
 import type { SavedCalculation } from '../schemas/saved-calculation.schema';
-import { savedCalculationsArraySchema } from '../schemas/saved-calculation.schema';
+import { savedCalculationSchema } from '../schemas/saved-calculation.schema';
+import { readValidatedCollection } from '@/shared/lib/storage';
 
 const KEY = 'meal-prep-dry-cooked-v1';
 
 export const dryToCookedRepository = {
   getAll(): SavedCalculation[] {
     try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return [];
-      return savedCalculationsArraySchema.parse(JSON.parse(raw));
+      return readValidatedCollection(
+        localStorage.getItem(KEY),
+        savedCalculationSchema,
+        [],
+      );
     } catch (err) {
       console.error('Failed to load dry-to-cooked calculations:', err);
       return [];

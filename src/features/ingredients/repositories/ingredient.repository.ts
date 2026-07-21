@@ -1,21 +1,21 @@
 import type { StoredIngredient } from '../schemas/ingredient.schema';
-import { storedIngredientsArraySchema } from '../schemas/ingredient.schema';
-import { normaliseName } from '@/shared/utils/format';
+import { storedIngredientSchema } from '../schemas/ingredient.schema';
 import { storageKeys } from '@/shared/constants/storage-keys';
+import { readValidatedCollection } from '@/shared/lib/storage';
 import { STARTER_INGREDIENTS } from '../data/seed-data';
+import { normaliseName } from '@/shared/utils/format';
 
 export const ingredientRepository = {
   getAll(): StoredIngredient[] {
     try {
       const raw = localStorage.getItem(storageKeys.ingredients);
-      if (!raw) {
+      if (raw === null) {
         localStorage.setItem(storageKeys.ingredients, JSON.stringify(STARTER_INGREDIENTS));
         return [...STARTER_INGREDIENTS];
       }
-      return storedIngredientsArraySchema.parse(JSON.parse(raw));
+      return readValidatedCollection(raw, storedIngredientSchema, []);
     } catch (err) {
       console.error('Failed to load ingredients from storage:', err);
-      localStorage.setItem(storageKeys.ingredients, JSON.stringify(STARTER_INGREDIENTS));
       return [...STARTER_INGREDIENTS];
     }
   },
