@@ -27,6 +27,27 @@ npx supabase init
 npx supabase start
 ```
 
+### Edge Functions
+
+**USDA Food Search** (`food-catalogue-search`):
+
+1. Set the USDA API key as a Supabase secret:
+   ```bash
+   npx supabase secrets set USDA_API_KEY=your-usda-key
+   ```
+
+2. Deploy:
+   ```bash
+   npx supabase functions deploy food-catalogue-search
+   ```
+
+3. For local development:
+   ```bash
+   npx supabase functions serve food-catalogue-search
+   ```
+
+The function proxies USDA FoodData Central search through Supabase, requiring an authenticated user and returning provider-neutral search results.
+
 ## Features
 
 - **Recipe Library** — browse, search, sort, and filter your recipes. Grid or list view with pagination. Click a card to edit, star favourites, or duplicate.
