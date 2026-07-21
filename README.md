@@ -6,9 +6,25 @@ A polished, mobile-first progressive web app for planning, calculating, and mana
 
 ```bash
 npm install
-npm run dev      # start dev server
-npm run build    # production build
-npm test         # run unit tests
+cp .env.example .env      # optional: configure Supabase
+npm run dev                # start dev server
+npm run build              # production build
+npm test                   # run unit tests
+```
+
+### Supabase (optional)
+
+The app works fully offline with localStorage. To enable remote persistence:
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Copy `.env.example` to `.env`
+3. Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+
+For local Supabase development:
+
+```bash
+npx supabase init
+npx supabase start
 ```
 
 ## Features
@@ -39,4 +55,4 @@ src/
 
 ## Stack
 
-React 19 · TypeScript 6 · Vite · TanStack Query · Zod · shadcn/ui · Tailwind CSS · next-themes · Vitest
+React 19 · TypeScript 6 · Vite · TanStack Query · Zod · shadcn/ui · Tailwind CSS · next-themes · Supabase · Vitest
