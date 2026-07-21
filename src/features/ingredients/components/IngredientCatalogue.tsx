@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { Search, Plus, Trash2, Pencil, Carrot } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
+import { normaliseName } from '@/shared/utils/format';
 
 const SORT_KEY = 'ingredient-catalogue-sort';
 
@@ -44,9 +45,9 @@ function loadSort(): SortValue {
 }
 
 function getRecipeUsage(ingredientName: string, recipes: Recipe[]): number {
-  const normalised = ingredientName.trim().toLowerCase();
+  const needle = normaliseName(ingredientName);
   return recipes.filter((r) =>
-    r.ingredients.some((i) => i.name.trim().toLowerCase() === normalised),
+    r.ingredients.some((i) => normaliseName(i.name) === needle),
   ).length;
 }
 

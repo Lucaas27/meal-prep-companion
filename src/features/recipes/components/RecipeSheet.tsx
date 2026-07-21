@@ -50,6 +50,7 @@ import {
 import IngredientRow from './IngredientRow';
 import NutritionSummary from './NutritionSummary';
 import { Plus, ShoppingBasket, Star, X, Check, ChevronsUpDown } from 'lucide-react';
+import { normaliseName } from '@/shared/utils/format';
 
 const STARTER_TAGS = [
   'High Protein', 'Low Calorie', 'Meal Prep', 'Quick',
@@ -126,7 +127,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
 
   const addFromCatalogue = (si: StoredIngredient) => {
     const duplicate = ingredients.find(
-      (i) => i.name.toLowerCase() === si.name.toLowerCase(),
+      (i) => normaliseName(i.name) === normaliseName(si.name),
     );
     if (duplicate) {
       updateIngredient({ ...duplicate, weight: duplicate.weight || 100 });
@@ -278,7 +279,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                     <CommandEmpty>No ingredients found.</CommandEmpty>
                     <CommandGroup>
                       {storedIngredients.map((si) => {
-                        const alreadyAdded = ingredients.some((i) => i.name.toLowerCase() === si.name.toLowerCase());
+                        const alreadyAdded = ingredients.some((i) => normaliseName(i.name) === normaliseName(si.name));
                         return (
                           <CommandItem
                             key={si.id}

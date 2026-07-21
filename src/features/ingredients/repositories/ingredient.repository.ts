@@ -1,5 +1,6 @@
 import type { StoredIngredient } from '../schemas/ingredient.schema';
 import { storedIngredientsArraySchema } from '../schemas/ingredient.schema';
+import { normaliseName } from '@/shared/utils/format';
 import { storageKeys } from '@/shared/constants/storage-keys';
 import { STARTER_INGREDIENTS } from '../data/seed-data';
 
@@ -46,9 +47,9 @@ export const ingredientRepository = {
   },
 
   existsByNormalisedName(name: string, excludeId?: string): boolean {
-    const normalised = name.trim().toLowerCase().replace(/\s+/g, ' ');
+    const needle = normaliseName(name);
     return this.getAll().some(
-      (i) => i.name.trim().toLowerCase().replace(/\s+/g, ' ') === normalised && i.id !== excludeId,
+      (i) => normaliseName(i.name) === needle && i.id !== excludeId,
     );
   },
 
