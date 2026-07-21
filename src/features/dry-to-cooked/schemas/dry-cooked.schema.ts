@@ -6,6 +6,7 @@ export const dryCookedInputsSchema = z.object({
   dryProteinPer100g: z.number().min(0),
   dryCarbsPer100g: z.number().min(0).default(0),
   dryFatPer100g: z.number().min(0).default(0),
+  nutritionBasis: z.number().min(1).default(100),
   cookedWeight: z.number().min(0),
   portions: z.number().int().min(1),
 });
