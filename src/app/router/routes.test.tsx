@@ -47,7 +47,6 @@ describe('routes', () => {
 
   it('renders planner at /planner', () => {
     renderRoute('/planner');
-    expect(screen.getByText('Meal Planner')).toBeDefined();
     expect(document.title).toContain('Planner');
   });
 

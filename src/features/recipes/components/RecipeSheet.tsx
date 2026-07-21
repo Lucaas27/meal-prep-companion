@@ -282,7 +282,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                         return (
                           <CommandItem
                             key={si.id}
-                            value={si.name}
+                            value={`${si.name}::${si.id}`}
                             onSelect={() => addFromCatalogue(si)}
                             className="flex items-center justify-between"
                           >

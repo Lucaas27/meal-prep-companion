@@ -84,6 +84,10 @@ export const supabaseRecipeRepository = {
 
   async delete(id: string): Promise<void> {
     const supabase = getSupabaseClient();
+    const { count } = await supabase.from('meal_plan_entries').select('id', { count: 'exact', head: true }).eq('recipe_id', id);
+    if (count && count > 0) {
+      throw new Error(`This recipe is used in ${count} meal plan entr${count === 1 ? 'y' : 'ies'}. Remove it from the planner first.`);
+    }
     await supabase.from('recipe_ingredients').delete().eq('recipe_id', id);
     const { error } = await supabase.from('recipes').delete().eq('id', id);
     if (error) throw new Error(`Failed to delete recipe: ${error.message}`);

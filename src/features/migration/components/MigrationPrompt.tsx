@@ -24,7 +24,7 @@ export function MigrationPrompt() {
 
   useEffect(() => {
     if (!user || !supabase) return;
-    getMigrationStatus().then(setStatus).finally(() => setLoading(false));
+    getMigrationStatus().then(setStatus).catch(() => {}).finally(() => setLoading(false));
   }, [user, supabase]);
 
   if (loading || !status || !status.hasLocalData || status.alreadyMigrated || !user || done) {

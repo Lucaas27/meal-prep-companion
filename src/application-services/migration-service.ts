@@ -4,7 +4,7 @@ import { dryToCookedRepository } from '@/features/dry-to-cooked/repositories/dry
 import { supabaseIngredientRepository } from '@/features/ingredients/repositories/supabase-ingredient.repository';
 import { supabaseRecipeRepository } from '@/features/recipes/repositories/supabase-recipe.repository';
 import { supabaseCalcRepository } from '@/features/dry-to-cooked/repositories/supabase-calc.repository';
-import { getSupabaseClient } from '@/infrastructure/supabase/client';
+import { getSupabaseClientOrNull } from '@/infrastructure/supabase/client';
 import { exportBackup } from './backup-service';
 
 const MIGRATION_KEY = 'local-storage-v1';
@@ -23,7 +23,7 @@ export interface MigrationStatus {
 }
 
 export async function getMigrationStatus(): Promise<MigrationStatus> {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseClientOrNull();
 
   const localIngredients = ingredientRepository.getAll();
   const localRecipes = recipeRepository.getAll();
@@ -32,13 +32,17 @@ export async function getMigrationStatus(): Promise<MigrationStatus> {
   const hasLocalData = localIngredients.length > 0 || localRecipes.length > 0 || localCalculations.length > 0;
 
   let alreadyMigrated = false;
-  if (hasLocalData) {
-    const { data } = await supabase
-      .from('data_migrations')
-      .select('id')
-      .eq('migration_key', MIGRATION_KEY)
-      .maybeSingle();
-    alreadyMigrated = !!data;
+  if (hasLocalData && supabase) {
+    try {
+      const { data } = await supabase
+        .from('data_migrations')
+        .select('id')
+        .eq('migration_key', MIGRATION_KEY)
+        .maybeSingle();
+      alreadyMigrated = !!data;
+    } catch {
+      // Supabase not available, assume not migrated
+    }
   }
 
   return {
@@ -54,7 +58,8 @@ export async function getMigrationStatus(): Promise<MigrationStatus> {
 }
 
 export async function runMigration(): Promise<MigrationCounts> {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseClientOrNull();
+  if (!supabase) throw new Error('Supabase not configured');
   const counts: MigrationCounts = { ingredients: 0, recipes: 0, calculations: 0, skipped: 0 };
 
   const localIngredients = ingredientRepository.getAll();

@@ -184,6 +184,45 @@ export interface Database {
         };
         Relationships: never[];
       };
+      meal_plan_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          recipe_id: string;
+          planned_date: string;
+          meal_slot: string;
+          servings: number;
+          notes: string | null;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          recipe_id: string;
+          planned_date: string;
+          meal_slot: string;
+          servings?: number;
+          notes?: string | null;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          recipe_id?: string;
+          planned_date?: string;
+          meal_slot?: string;
+          servings?: number;
+          notes?: string | null;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
