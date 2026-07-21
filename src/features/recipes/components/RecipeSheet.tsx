@@ -58,11 +58,11 @@ const STARTER_TAGS = [
 ];
 
 function makeBlankIngredient(): Ingredient {
-  return { id: makeId(), name: '', weight: 0, caloriesPer100g: 0, proteinPer100g: 0, carbsPer100g: 0, fatPer100g: 0 };
+  return { id: makeId(), name: '', weight: 0, unit: 'g', unitConversionId: null, caloriesPer100g: 0, proteinPer100g: 0, carbsPer100g: 0, fatPer100g: 0 };
 }
 
 function makeIngredientFromCatalogue(si: StoredIngredient): Ingredient {
-  return { id: si.id, name: si.name, weight: 100, caloriesPer100g: si.caloriesPer100g, proteinPer100g: si.proteinPer100g, carbsPer100g: si.carbsPer100g, fatPer100g: si.fatPer100g };
+  return { id: si.id, name: si.name, weight: 100, unit: 'g', unitConversionId: null, caloriesPer100g: si.caloriesPer100g, proteinPer100g: si.proteinPer100g, carbsPer100g: si.carbsPer100g, fatPer100g: si.fatPer100g };
 }
 
 interface FormProps {

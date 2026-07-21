@@ -4,6 +4,8 @@ export const ingredientSchema = z.object({
   id: z.string(),
   name: z.string(),
   weight: z.number().min(0),
+  unit: z.string().default('g'),
+  unitConversionId: z.string().nullable().default(null),
   caloriesPer100g: z.number().min(0),
   proteinPer100g: z.number().min(0),
   carbsPer100g: z.number().min(0).default(0),

@@ -71,7 +71,8 @@ export const supabaseRecipeRepository = {
         recipe_id: recipe.id,
         ingredient_id: ing.id,
         quantity: ing.weight,
-        unit: 'g',
+        unit: ing.unit || 'g',
+        ingredient_unit_conversion_id: ing.unitConversionId || null,
         position: idx,
       }));
       const { error: riError } = await supabase.from('recipe_ingredients').insert(cast(riRows));

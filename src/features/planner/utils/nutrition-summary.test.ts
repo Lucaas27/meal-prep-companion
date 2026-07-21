@@ -9,8 +9,8 @@ function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
     name: 'Chicken & Rice',
     portions: 4,
     ingredients: [
-      { id: 'i1', name: 'Chicken', weight: 200, caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
-      { id: 'i2', name: 'Rice', weight: 200, caloriesPer100g: 355, proteinPer100g: 8, carbsPer100g: 77, fatPer100g: 1 },
+      { id: 'i1', name: 'Chicken', weight: 200, unit: 'g', unitConversionId: null, caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+      { id: 'i2', name: 'Rice', weight: 200, unit: 'g', unitConversionId: null, caloriesPer100g: 355, proteinPer100g: 8, carbsPer100g: 77, fatPer100g: 1 },
     ],
     createdAt: 1000,
     updatedAt: 1000,

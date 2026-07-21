@@ -30,6 +30,8 @@ export function mapRecipeRows(
       id: j.riRow.id,
       name: j.ingRow.name,
       weight: j.riRow.quantity,
+      unit: j.riRow.unit || 'g',
+      unitConversionId: j.riRow.ingredient_unit_conversion_id,
       caloriesPer100g: j.ingRow.calories_per_100g,
       proteinPer100g: j.ingRow.protein_per_100g,
       carbsPer100g: j.ingRow.carbs_per_100g,
