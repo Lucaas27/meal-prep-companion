@@ -17,9 +17,12 @@ import RecipeSheet from '@/features/recipes/components/RecipeSheet';
 import DryCookedCalculator from '@/features/dry-to-cooked/components/DryCookedCalculator';
 import IngredientCatalogue from '@/features/ingredients/components/IngredientCatalogue';
 import SettingsPage from '@/features/settings/pages/settings-page';
+import PlannerPage from '@/features/planner/pages/planner-page';
+import NotFoundPage from '@/app/pages/not-found-page';
 
 const NAV_ITEMS = [
   { to: '/recipes', label: 'Recipes' },
+  { to: '/planner', label: 'Planner' },
   { to: '/calculator', label: 'Calculator' },
   { to: '/ingredients', label: 'Catalogue' },
   { to: '/settings', label: 'Settings' },
@@ -35,9 +38,10 @@ export default function App() {
       '/recipes': 'Recipes',
       '/calculator': 'Calculator',
       '/ingredients': 'Catalogue',
+      '/planner': 'Planner',
       '/settings': 'Settings',
     };
-    const title = titles[location.pathname] || 'Recipes';
+    const title = titles[location.pathname] || 'Not Found';
     document.title = `${title} | Meal Prep Companion`;
   }, [location.pathname]);
 
@@ -149,6 +153,7 @@ export default function App() {
             />
           }
         />
+        <Route path="/planner" element={<PlannerPage />} />
         <Route path="/calculator" element={<DryCookedCalculator />} />
         <Route
           path="/ingredients"
@@ -161,6 +166,7 @@ export default function App() {
           }
         />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       <RecipeSheet
