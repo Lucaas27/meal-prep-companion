@@ -47,7 +47,7 @@ const SORT_OPTIONS = [
   { value: 'calories-asc', label: 'Lowest Calories' },
   { value: 'protein-desc', label: 'Highest Protein' },
   { value: 'protein-asc', label: 'Lowest Protein' },
-  { value: 'favourites', label: 'Favourite First' },
+  { value: 'favourites', label: 'Favourites List' },
 ] as const;
 
 type SortValue = (typeof SORT_OPTIONS)[number]['value'];
@@ -133,16 +133,20 @@ export default function RecipeLibrary({
   const viewProps = { onEdit, onDuplicate, onDelete, onToggleFavourite };
 
   const filtered = useMemo(() => {
+    let list = recipes;
     const q = search.trim().toLowerCase();
-    if (!q) return recipes;
-
-    return recipes.filter((r) => {
-      if (r.name.toLowerCase().includes(q)) return true;
-      if (r.tags.some((t) => t.toLowerCase().includes(q))) return true;
-      return r.ingredients.some((i) => i.name.toLowerCase().includes(q));
-
-    });
-  }, [recipes, search]);
+    if (q) {
+      list = list.filter((r) => {
+        if (r.name.toLowerCase().includes(q)) return true;
+        if (r.tags.some((t) => t.toLowerCase().includes(q))) return true;
+        return r.ingredients.some((i) => i.name.toLowerCase().includes(q));
+      });
+    }
+    if (sort === 'favourites') {
+      list = list.filter((r) => r.favourite);
+    }
+    return list;
+  }, [recipes, search, sort]);
 
   const sorted = useMemo(() => sortRecipes(filtered, sort), [filtered, sort]);
 
@@ -153,15 +157,18 @@ export default function RecipeLibrary({
   );
 
   const stats = useMemo(() => {
-    const total = recipes.length;
-    const favs = recipes.filter((r) => r.favourite).length;
-    const totalPortions = recipes.reduce((sum, r) => sum + r.portions, 0);
+    const total = filtered.length;
+    const favs = filtered.filter((r) => r.favourite).length;
     const avgCal =
       total > 0
-        ? round1dp(recipes.reduce((sum, r) => sum + getCalories(r), 0) / total)
+        ? round1dp(filtered.reduce((sum, r) => sum + getCalories(r), 0) / total)
         : 0;
-    return { total, favs, totalPortions, avgCal };
-  }, [recipes]);
+    const avgProtein =
+      total > 0
+        ? round1dp(filtered.reduce((sum, r) => sum + getProtein(r), 0) / total)
+        : 0;
+    return { total, favs, avgCal, avgProtein };
+  }, [filtered]);
 
   const safePage = Math.min(page, totalPages);
 
@@ -169,8 +176,7 @@ export default function RecipeLibrary({
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Recipes</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground">
             {recipes.length} {recipes.length === 1 ? 'recipe' : 'recipes'}
           </p>
         </div>
@@ -219,12 +225,12 @@ export default function RecipeLibrary({
             <span className="block text-[10px] text-muted-foreground">Favourites</span>
           </div>
           <div className="rounded-lg border bg-card p-3 text-center">
-            <span className="block text-lg font-semibold tracking-tight">{stats.totalPortions}</span>
-            <span className="block text-[10px] text-muted-foreground">Portions</span>
-          </div>
-          <div className="rounded-lg border bg-card p-3 text-center">
             <span className="block text-lg font-semibold tracking-tight">{stats.avgCal}</span>
             <span className="block text-[10px] text-muted-foreground">Avg kcal</span>
+          </div>
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{stats.avgProtein}g</span>
+            <span className="block text-[10px] text-muted-foreground">Avg protein</span>
           </div>
         </div>
       )}

@@ -142,12 +142,9 @@ export default function DryCookedCalculator() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">Dry-to-Cooked</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Calculate cooked nutrition and serving weights from dry or raw ingredients.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Calculate cooked nutrition and serving weights from dry or raw ingredients.
+      </p>
 
       <Card>
         <CardHeader className="pb-4">

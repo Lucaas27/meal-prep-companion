@@ -143,8 +143,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Catalogue</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground">
             {ingredients.length} {ingredients.length === 1 ? 'ingredient' : 'ingredients'}
           </p>
         </div>
