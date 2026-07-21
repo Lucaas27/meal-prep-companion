@@ -1,6 +1,12 @@
 import { useState, useCallback } from 'react';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
-import { useRecipes, useCreateRecipe, useDeleteRecipe, useDuplicateRecipe } from '@/features/recipes/hooks';
+import {
+  useRecipes,
+  useCreateRecipe,
+  useUpdateRecipe,
+  useDeleteRecipe,
+  useDuplicateRecipe,
+} from '@/features/recipes/hooks';
 import { useIngredients, useCreateIngredient, useDeleteIngredient } from '@/features/ingredients/hooks';
 import { AppLayout } from '@/app/layout/app-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +21,7 @@ export default function App() {
   const { data: storedIngredients = [] } = useIngredients();
 
   const saveRecipe = useCreateRecipe();
+  const updateRecipe = useUpdateRecipe();
   const deleteRecipe = useDeleteRecipe();
   const duplicateRecipe = useDuplicateRecipe();
   const saveIngredient = useCreateIngredient();
@@ -40,6 +47,13 @@ export default function App() {
       });
     },
     [saveRecipe, editingRecipe],
+  );
+
+  const handleToggleFavourite = useCallback(
+    (recipe: Recipe) => {
+      updateRecipe.mutate({ ...recipe, favourite: !recipe.favourite });
+    },
+    [updateRecipe],
   );
 
   const handleDuplicate = useCallback(
@@ -93,6 +107,7 @@ export default function App() {
             onEdit={handleEdit}
             onDuplicate={handleDuplicate}
             onDelete={handleDeleteRecipe}
+            onToggleFavourite={handleToggleFavourite}
             onNew={handleNew}
           />
         </TabsContent>

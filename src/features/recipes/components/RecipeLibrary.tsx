@@ -1,134 +1,344 @@
+import { useState, useMemo } from 'react';
 import type { Recipe } from '../schemas/recipe.schema';
-import { calcBatchTotals, calcPerPortion } from '../utils/calculations';
+import { calcBatchTotals } from '../utils/calculations';
 import { round1dp } from '@/shared/utils/format';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Pencil, Copy, Trash2, Plus, ChefHat } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select';
+import {
+  Search,
+  Plus,
+  ChefHat,
+  LayoutGrid,
+  List,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import { RecipeGridView } from './RecipeGridView';
+import { RecipeListView } from './RecipeListView';
+
+function loadPageSize(): number {
+  const saved = localStorage.getItem(PAGE_SIZE_KEY);
+  const n = Number(saved);
+  return PAGE_SIZE_OPTIONS.includes(n as typeof PAGE_SIZE_OPTIONS[number]) ? n : 10;
+}
+
+function savePageSize(value: number) {
+  localStorage.setItem(PAGE_SIZE_KEY, String(value));
+}
+
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
+
+const SORT_KEY = 'recipe-library-sort';
+const VIEW_KEY = 'recipe-library-view';
+const PAGE_SIZE_KEY = 'recipe-library-page-size';
+
+const SORT_OPTIONS = [
+  { value: 'recent', label: 'Recently Updated' },
+  { value: 'created', label: 'Recently Created' },
+  { value: 'name-asc', label: 'A–Z' },
+  { value: 'name-desc', label: 'Z–A' },
+  { value: 'calories-desc', label: 'Highest Calories' },
+  { value: 'calories-asc', label: 'Lowest Calories' },
+  { value: 'protein-desc', label: 'Highest Protein' },
+  { value: 'protein-asc', label: 'Lowest Protein' },
+  { value: 'favourites', label: 'Favourite First' },
+] as const;
+
+type SortValue = (typeof SORT_OPTIONS)[number]['value'];
+type ViewMode = 'grid' | 'list';
+
+function loadSort(): SortValue {
+  const saved = localStorage.getItem(SORT_KEY);
+  return SORT_OPTIONS.some((o) => o.value === saved) ? (saved as SortValue) : 'recent';
+}
+
+function saveSort(value: SortValue) {
+  localStorage.setItem(SORT_KEY, value);
+}
+
+function loadView(): ViewMode {
+  const saved = localStorage.getItem(VIEW_KEY);
+  return saved === 'list' ? 'list' : 'grid';
+}
+
+function saveView(value: ViewMode) {
+  localStorage.setItem(VIEW_KEY, value);
+}
+
+function sortRecipes(recipes: Recipe[], sort: SortValue): Recipe[] {
+  const sorted = [...recipes];
+  switch (sort) {
+    case 'recent':
+      return sorted.sort((a, b) => b.createdAt - a.createdAt);
+    case 'created':
+      return sorted.sort((a, b) => a.createdAt - b.createdAt);
+    case 'name-asc':
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    case 'name-desc':
+      return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    case 'calories-desc':
+      return sorted.sort((a, b) => getCalories(b) - getCalories(a));
+    case 'calories-asc':
+      return sorted.sort((a, b) => getCalories(a) - getCalories(b));
+    case 'protein-desc':
+      return sorted.sort((a, b) => getProtein(b) - getProtein(a));
+    case 'protein-asc':
+      return sorted.sort((a, b) => getProtein(a) - getProtein(b));
+    case 'favourites':
+      return sorted.sort((a, b) => (b.favourite ? 1 : 0) - (a.favourite ? 1 : 0));
+  }
+}
+
+function getCalories(recipe: Recipe): number {
+  const valid = recipe.ingredients.filter((i) => i.weight > 0 && i.caloriesPer100g > 0 && i.proteinPer100g > 0);
+  const totals = calcBatchTotals(valid);
+  return recipe.portions > 0 ? totals.totalCalories / recipe.portions : 0;
+}
+
+function getProtein(recipe: Recipe): number {
+  const valid = recipe.ingredients.filter((i) => i.weight > 0 && i.caloriesPer100g > 0 && i.proteinPer100g > 0);
+  const totals = calcBatchTotals(valid);
+  return recipe.portions > 0 ? totals.totalProtein / recipe.portions : 0;
+}
 
 interface Props {
   recipes: Recipe[];
   onEdit: (recipe: Recipe) => void;
   onDuplicate: (recipe: Recipe) => void;
   onDelete: (id: string) => void;
+  onToggleFavourite: (recipe: Recipe) => void;
   onNew: () => void;
 }
 
-export default function RecipeLibrary({ recipes, onEdit, onDuplicate, onDelete, onNew }: Props) {
+export default function RecipeLibrary({
+  recipes,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  onToggleFavourite,
+  onNew,
+}: Props) {
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<SortValue>(loadSort);
+  const [view, setView] = useState<ViewMode>(loadView);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(loadPageSize);
+
+  const viewProps = { onEdit, onDuplicate, onDelete, onToggleFavourite };
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return recipes;
+
+    return recipes.filter((r) => {
+      if (r.name.toLowerCase().includes(q)) return true;
+      if (r.tags.some((t) => t.toLowerCase().includes(q))) return true;
+      return r.ingredients.some((i) => i.name.toLowerCase().includes(q));
+
+    });
+  }, [recipes, search]);
+
+  const sorted = useMemo(() => sortRecipes(filtered, sort), [filtered, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const paged = useMemo(
+    () => sorted.slice((page - 1) * pageSize, page * pageSize),
+    [sorted, page, pageSize],
+  );
+
+  const stats = useMemo(() => {
+    const total = recipes.length;
+    const favs = recipes.filter((r) => r.favourite).length;
+    const totalPortions = recipes.reduce((sum, r) => sum + r.portions, 0);
+    const avgCal =
+      total > 0
+        ? round1dp(recipes.reduce((sum, r) => sum + getCalories(r), 0) / total)
+        : 0;
+    return { total, favs, totalPortions, avgCal };
+  }, [recipes]);
+
+  const safePage = Math.min(page, totalPages);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Recipes</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             {recipes.length} {recipes.length === 1 ? 'recipe' : 'recipes'}
           </p>
         </div>
-        <Button onClick={onNew} size="sm">
-          <Plus className="h-4 w-4 mr-1.5" />
-          New
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <div className="flex rounded-md border p-0.5">
+            <Button
+              variant={view === 'grid' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8 min-h-0"
+              onClick={() => {
+                setView('grid');
+                saveView('grid');
+              }}
+              aria-label="Grid view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={view === 'list' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8 min-h-0"
+              onClick={() => {
+                setView('list');
+                saveView('list');
+              }}
+              aria-label="List view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button onClick={onNew} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            New
+          </Button>
+        </div>
+      </div>
+
+      {recipes.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{stats.total}</span>
+            <span className="block text-[10px] text-muted-foreground">Recipes</span>
+          </div>
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{stats.favs}</span>
+            <span className="block text-[10px] text-muted-foreground">Favourites</span>
+          </div>
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{stats.totalPortions}</span>
+            <span className="block text-[10px] text-muted-foreground">Portions</span>
+          </div>
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{stats.avgCal}</span>
+            <span className="block text-[10px] text-muted-foreground">Avg kcal</span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search recipes, ingredients, tags..."
+            className="pl-9"
+          />
+        </div>
+        <Select
+          value={sort}
+          onValueChange={(v) => {
+            setSort(v as SortValue);
+            saveSort(v as SortValue);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[150px] text-xs">
+            {SORT_OPTIONS.find((o) => o.value === sort)?.label ?? 'Sort'}
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {recipes.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center px-6">
             <ChefHat className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground text-sm mb-4">No recipes yet. Create your first meal prep recipe.</p>
+            <p className="text-muted-foreground text-sm mb-1 font-medium">No recipes yet</p>
+            <p className="text-muted-foreground text-xs mb-4">
+              Create your first recipe to get started.
+            </p>
             <Button onClick={onNew}>
               <Plus className="h-4 w-4 mr-1.5" />
               Create Recipe
             </Button>
-          </CardContent>
+          </div>
         </Card>
+      ) : sorted.length === 0 ? (
+        <Card className="border-dashed">
+          <div className="flex flex-col items-center justify-center py-12 text-center px-6">
+            <p className="text-muted-foreground text-sm">No recipes match your search.</p>
+          </div>
+        </Card>
+      ) : view === 'grid' ? (
+        <RecipeGridView recipes={paged} {...viewProps} />
       ) : (
-        <div className="space-y-3">
-          {recipes.map((recipe) => {
-            const valid = recipe.ingredients.filter(
-              (i) => i.weight > 0 && i.caloriesPer100g > 0 && i.proteinPer100g > 0,
-            );
-            const totals = calcBatchTotals(valid);
-            const per = recipe.portions > 0 ? calcPerPortion(totals, recipe.portions) : null;
+        <RecipeListView recipes={paged} {...viewProps} />
+      )}
 
-            return (
-              <Card key={recipe.id} className="transition-shadow duration-200 hover:shadow-md">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-[15px] leading-tight">{recipe.name}</h3>
-                      <p className="text-[13px] text-muted-foreground mt-0.5">{recipe.portions} portions</p>
-                    </div>
-                  </div>
-
-                  {per && (
-                    <div className="grid grid-cols-3 gap-2.5 mb-4">
-                      <div className="bg-muted/70 rounded-lg p-2.5 text-center">
-                        <span className="block text-base font-semibold tracking-tight">
-                          {round1dp(per.caloriesPerPortion)}
-                        </span>
-                        <span className="block text-[11px] text-muted-foreground mt-0.5">kcal</span>
-                      </div>
-                      <div className="bg-muted/70 rounded-lg p-2.5 text-center">
-                        <span className="block text-base font-semibold tracking-tight">
-                          {round1dp(per.proteinPerPortion)}g
-                        </span>
-                        <span className="block text-[11px] text-muted-foreground mt-0.5">protein</span>
-                      </div>
-                      <div className="bg-muted/70 rounded-lg p-2.5 text-center">
-                        <span className="block text-base font-semibold tracking-tight">
-                          {round1dp(per.weightPerPortion)}g
-                        </span>
-                        <span className="block text-[11px] text-muted-foreground mt-0.5">weight</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {recipe.ingredients.map((ing) => (
-                      <Badge key={ing.id} variant="secondary" className="text-[11px] font-medium">
-                        {ing.name} ({ing.weight}g)
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-0.5 border-t pt-3">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(recipe)} className="h-8">
-                          <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                          Edit
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Edit recipe</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={() => onDuplicate(recipe)} className="h-8">
-                          <Copy className="h-3.5 w-3.5 mr-1.5" />
-                          Duplicate
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Duplicate recipe</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 text-destructive ml-auto"
-                          onClick={() => onDelete(recipe.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Delete recipe</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+      {sorted.length > PAGE_SIZE_OPTIONS[0] && (
+        <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              {sorted.length} results &middot; page {safePage} of {totalPages}
+            </p>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => {
+                const n = Number(v);
+                setPageSize(n);
+                savePageSize(n);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-7 w-[70px] text-xs min-h-0">
+                {pageSize}
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 min-h-0"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Prev
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 min-h-0"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
       )}
     </div>

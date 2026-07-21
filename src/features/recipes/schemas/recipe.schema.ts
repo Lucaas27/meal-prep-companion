@@ -14,6 +14,8 @@ export const recipeSchema = z.object({
   portions: z.number().int().min(1),
   ingredients: z.array(ingredientSchema),
   createdAt: z.number(),
+  tags: z.array(z.string()).default([]),
+  favourite: z.boolean().default(false),
 });
 
 export const recipesArraySchema = z.array(recipeSchema);
