@@ -229,6 +229,48 @@ export interface Database {
         };
         Relationships: never[];
       };
+      ingredient_unit_conversions: {
+        Row: {
+          id: string;
+          user_id: string;
+          ingredient_id: string;
+          unit: string;
+          label: string;
+          grams_per_unit: number;
+          is_default: boolean;
+          source_type: string;
+          external_source_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          ingredient_id: string;
+          unit: string;
+          label: string;
+          grams_per_unit: number;
+          is_default?: boolean;
+          source_type?: string;
+          external_source_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          ingredient_id?: string;
+          unit?: string;
+          label?: string;
+          grams_per_unit?: number;
+          is_default?: boolean;
+          source_type?: string;
+          external_source_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

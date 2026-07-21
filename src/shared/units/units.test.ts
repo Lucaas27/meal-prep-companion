@@ -105,6 +105,11 @@ describe('convertWeightToGrams', () => {
     expect(r.status).toBe('unavailable');
     expect(r.reason).toBe('invalid-quantity');
   });
+
+  it('returns unavailable for non-weight unit producing NaN', () => {
+    const r = convertWeightToGrams(1, 'cup' as never);
+    expect(r.status).toBe('unavailable');
+  });
 });
 
 describe('convertIngredientUnitToGrams', () => {

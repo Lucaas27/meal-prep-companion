@@ -4,7 +4,19 @@ import type { Ingredient } from '@/features/recipes/schemas/recipe.schema';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Trash2 } from 'lucide-react';
+import { UNIT_META } from '@/shared/units/types';
+import type { WeightUnit } from '@/shared/units/types';
+import { convertWeightToGrams } from '@/shared/units/conversion';
+
+const WEIGHT_UNIT_OPTIONS: WeightUnit[] = ['g', 'kg', 'mg', 'oz', 'lb'];
 
 interface Props {
   ingredient: Ingredient;
@@ -17,7 +29,17 @@ export default function IngredientRow({ ingredient, onChange, onDelete }: Props)
     onChange({ ...ingredient, [field]: field === 'name' ? value : Number(value) });
   };
 
+  const handleUnitChange = (unit: string) => {
+    onChange({ ...ingredient, unit });
+  };
+
+  const unit = (ingredient.unit || 'g') as WeightUnit;
   const weight = ingredient.weight || 0;
+  const gramsResult = unit !== 'g' ? convertWeightToGrams(weight, unit) : null;
+  const gramsLabel = gramsResult?.status === 'available' && gramsResult.grams !== weight
+    ? `(${round1dp(gramsResult.grams!)} g)`
+    : '';
+
   const totalCal = weight > 0 ? round1dp(calcIngredientCalories(weight, ingredient.caloriesPer100g)) : 0;
   const totalProt = weight > 0 ? round1dp(calcIngredientProtein(weight, ingredient.proteinPer100g)) : 0;
   const totalCarbs = weight > 0 ? round1dp(calcIngredientCarbs(weight, ingredient.carbsPer100g)) : 0;
@@ -33,8 +55,29 @@ export default function IngredientRow({ ingredient, onChange, onDelete }: Props)
           <Input value={ingredient.name} onChange={(e) => handleChange('name', e.target.value)} placeholder="Chicken breast" />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Weight (g)</Label>
-          <Input type="number" value={ingredient.weight || ''} onChange={(e) => handleChange('weight', e.target.value)} placeholder="200" min="0" step="1" />
+          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Quantity</Label>
+          <div className="flex gap-1">
+            <Input
+              type="number"
+              className="flex-1"
+              value={ingredient.weight || ''}
+              onChange={(e) => handleChange('weight', e.target.value)}
+              placeholder="200"
+              min="0"
+              step="any"
+            />
+            <Select value={unit} onValueChange={handleUnitChange}>
+              <SelectTrigger className="w-[65px] shrink-0 text-xs min-h-0">
+                <SelectValue>{UNIT_META[unit]?.abbr || unit}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {WEIGHT_UNIT_OPTIONS.map((u) => (
+                  <SelectItem key={u} value={u}>{UNIT_META[u].abbr}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {gramsLabel && <span className="text-[10px] text-muted-foreground">{gramsLabel}</span>}
         </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Cal / 100g</Label>

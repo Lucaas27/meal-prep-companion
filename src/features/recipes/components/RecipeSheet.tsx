@@ -104,7 +104,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
     return !ingredients.every((ing, i) => {
       const orig = initialIngredients[i];
       if (!orig) return true;
-      return ing.id === orig.id && ing.name === orig.name && ing.weight === orig.weight && ing.caloriesPer100g === orig.caloriesPer100g && ing.proteinPer100g === orig.proteinPer100g;
+      return ing.id === orig.id && ing.name === orig.name && ing.weight === orig.weight && ing.unit === orig.unit && ing.caloriesPer100g === orig.caloriesPer100g && ing.proteinPer100g === orig.proteinPer100g;
     });
 
   }, [name, portions, ingredients, tags, favourite, notes, initialName, initialPortions, initialIngredients, initialTags, initialFavourite, initialNotes]);

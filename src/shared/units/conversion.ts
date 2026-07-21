@@ -24,7 +24,11 @@ export function convertWeightToGrams(quantity: number, unit: WeightUnit): Quanti
   }
 
   const factor = WEIGHT_TO_GRAMS[unit];
-  return { status: 'available', grams: quantity * factor };
+  const grams = quantity * factor;
+  if (!Number.isFinite(grams)) {
+    return { status: 'unavailable', reason: 'invalid-quantity' };
+  }
+  return { status: 'available', grams };
 }
 
 export function convertIngredientUnitToGrams(): QuantityToGramsResult {

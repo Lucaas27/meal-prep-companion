@@ -1,19 +1,21 @@
 import { round1dp } from '@/shared/utils/format';
+import { convertWeightToGrams, convertIngredientUnitToGrams } from '@/shared/units/conversion';
+import type { WeightUnit, UnitId } from '@/shared/units/types';
 
-export function calcIngredientCalories(weight: number, caloriesPer100g: number): number {
-  return (weight / 100) * caloriesPer100g;
+export function calcIngredientCalories(weightInGrams: number, caloriesPer100g: number): number {
+  return (weightInGrams / 100) * caloriesPer100g;
 }
 
-export function calcIngredientProtein(weight: number, proteinPer100g: number): number {
-  return (weight / 100) * proteinPer100g;
+export function calcIngredientProtein(weightInGrams: number, proteinPer100g: number): number {
+  return (weightInGrams / 100) * proteinPer100g;
 }
 
-export function calcIngredientCarbs(weight: number, carbsPer100g: number): number {
-  return (weight / 100) * carbsPer100g;
+export function calcIngredientCarbs(weightInGrams: number, carbsPer100g: number): number {
+  return (weightInGrams / 100) * carbsPer100g;
 }
 
-export function calcIngredientFat(weight: number, fatPer100g: number): number {
-  return (weight / 100) * fatPer100g;
+export function calcIngredientFat(weightInGrams: number, fatPer100g: number): number {
+  return (weightInGrams / 100) * fatPer100g;
 }
 
 export interface IngredientTotals {
@@ -22,6 +24,8 @@ export interface IngredientTotals {
   totalProtein: number;
   totalCarbs: number;
   totalFat: number;
+  isComplete: boolean;
+  incompleteCount: number;
 }
 
 export interface PerPortion {
@@ -32,24 +36,64 @@ export interface PerPortion {
   fatPerPortion: number;
 }
 
-export function calcBatchTotals(
-  ingredients: { weight: number; caloriesPer100g: number; proteinPer100g: number; carbsPer100g: number; fatPer100g: number }[],
-): IngredientTotals {
+interface CalcIngredient {
+  weight: number;
+  unit?: string;
+  unitConversionId?: string | null;
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+}
+
+function resolveGrams(ing: CalcIngredient): { grams: number; available: boolean } {
+  const unit = (ing.unit || 'g') as UnitId;
+
+  if (unit === 'g') return { grams: ing.weight, available: true };
+
+  const result = convertWeightToGrams(ing.weight, unit as WeightUnit);
+  if (result.status === 'available') {
+    return { grams: result.grams!, available: true };
+  }
+
+  const ingResult = convertIngredientUnitToGrams();
+  if (ingResult.status === 'available') {
+    return { grams: ingResult.grams!, available: true };
+  }
+
+  return { grams: 0, available: false };
+}
+
+export function calcBatchTotals(ingredients: CalcIngredient[]): IngredientTotals {
   let totalWeight = 0;
   let totalCalories = 0;
   let totalProtein = 0;
   let totalCarbs = 0;
   let totalFat = 0;
+  let incompleteCount = 0;
 
   for (const ing of ingredients) {
-    totalWeight += ing.weight;
-    totalCalories += calcIngredientCalories(ing.weight, ing.caloriesPer100g);
-    totalProtein += calcIngredientProtein(ing.weight, ing.proteinPer100g);
-    totalCarbs += calcIngredientCarbs(ing.weight, ing.carbsPer100g);
-    totalFat += calcIngredientFat(ing.weight, ing.fatPer100g);
+    const { grams, available } = resolveGrams(ing);
+    if (!available) {
+      incompleteCount++;
+      continue;
+    }
+    totalWeight += grams;
+    totalCalories += calcIngredientCalories(grams, ing.caloriesPer100g);
+    totalProtein += calcIngredientProtein(grams, ing.proteinPer100g);
+    totalCarbs += calcIngredientCarbs(grams, ing.carbsPer100g);
+    totalFat += calcIngredientFat(grams, ing.fatPer100g);
   }
 
-  return { totalWeight, totalCalories, totalProtein, totalCarbs, totalFat };
+  return {
+    totalWeight,
+    totalCalories,
+    totalProtein,
+    totalCarbs,
+    totalFat,
+    isComplete: incompleteCount === 0,
+    incompleteCount,
+  };
 }
 
 export function calcPerPortion(totals: IngredientTotals, portions: number): PerPortion {
