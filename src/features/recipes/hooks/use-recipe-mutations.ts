@@ -30,6 +30,7 @@ export function useUpdateRecipe() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.mealPlan.all });
     },
   });
 }
@@ -42,6 +43,7 @@ export function useDeleteRecipe() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.mealPlan.all });
     },
   });
 }

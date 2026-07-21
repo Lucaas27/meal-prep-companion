@@ -12,6 +12,7 @@ import {
 import { getMonday, getWeekDays, formatDate, addWeeks, isSameDay } from '@/shared/utils/date';
 import { calcBatchTotals, calcPerPortion } from '@/features/recipes/utils/calculations';
 import { round1dp } from '@/shared/utils/format';
+import { calculateWeekNutrition, calculateDayAverages } from '../utils/nutrition-summary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -188,7 +189,22 @@ export default function PlannerPage() {
 
   const missingRecipes = entries.filter((e) => !recipeMap.has(e.recipeId));
 
-  const renderEntry = (e: MealPlanEntry, compact = false) => {
+  const weekNutrition = useMemo(
+    () => calculateWeekNutrition(entries, recipeMap),
+    [entries, recipeMap],
+  );
+
+  const mealDays = useMemo(
+    () => new Set(entries.map((e) => e.plannedDate)).size,
+    [entries],
+  );
+
+  const dayAverages = useMemo(
+    () => calculateDayAverages(weekNutrition, mealDays),
+    [weekNutrition, mealDays],
+  );
+
+  const renderEntry = (e: MealPlanEntry) => {
     const recipe = recipeMap.get(e.recipeId);
     if (!recipe) return (
       <div key={e.id} className="text-[10px] text-destructive py-1">Unknown recipe</div>
@@ -198,43 +214,26 @@ export default function PlannerPage() {
       : null;
 
     return (
-      <div key={e.id} className={cn('group relative', compact ? 'text-xs bg-muted/50 rounded px-1.5 py-0.5 mt-0.5' : 'rounded-lg border p-3')}>
-        {compact ? (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="font-medium truncate">{recipe.name}</span>
-              <div className="hidden group-hover:flex items-center gap-0.5 ml-1">
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEdit(e)}><Pencil className="h-3 w-3" /></Button>
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDuplicate(e)}><Copy className="h-3 w-3" /></Button>
-                <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => handleDelete(e)}><Trash2 className="h-3 w-3" /></Button>
-              </div>
-            </div>
-            {e.servings > 1 && <span className="text-[10px] text-muted-foreground">×{e.servings}</span>}
-            {per && <span className="text-[10px] text-muted-foreground ml-1">{round1dp(per.caloriesPerPortion * e.servings)} kcal</span>}
-          </>
-        ) : (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-sm">{recipe.name}</span>
-              <div className="flex items-center gap-0.5">
-                {e.servings > 1 && <Badge variant="secondary" className="text-[10px]">×{e.servings}</Badge>}
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenMove(e)}><ArrowRightLeft className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(e)}><Trash2 className="h-3.5 w-3.5" /></Button>
-              </div>
-            </div>
-            {per && (
-              <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground">
-                <span>{round1dp(per.caloriesPerPortion * e.servings)} kcal</span>
-                <span>{round1dp(per.proteinPerPortion * e.servings)}g P</span>
-                <span>{round1dp(per.carbsPerPortion * e.servings)}g C</span>
-                <span>{round1dp(per.fatPerPortion * e.servings)}g F</span>
-              </div>
-            )}
-            {e.notes && <p className="text-[11px] text-muted-foreground mt-1">{e.notes}</p>}
-          </>
+      <div key={e.id} className="rounded-lg border bg-card p-3">
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-sm">{recipe.name}</span>
+          <div className="flex items-center gap-0.5">
+            {e.servings > 1 && <Badge variant="secondary" className="text-[10px]">×{e.servings}</Badge>}
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenMove(e)}><ArrowRightLeft className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(e)}><Trash2 className="h-3.5 w-3.5" /></Button>
+          </div>
+        </div>
+        {per && (
+          <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground">
+            <span>{round1dp(per.caloriesPerPortion * e.servings)} kcal</span>
+            <span>{round1dp(per.proteinPerPortion * e.servings)}g P</span>
+            <span>{round1dp(per.carbsPerPortion * e.servings)}g C</span>
+            <span>{round1dp(per.fatPerPortion * e.servings)}g F</span>
+          </div>
         )}
+        {e.notes && <p className="text-[11px] text-muted-foreground mt-1">{e.notes}</p>}
       </div>
     );
   };
@@ -243,20 +242,54 @@ export default function PlannerPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <p className="text-sm text-muted-foreground">
-            {formatDate(monday)} – {formatDate(days[6])}
+          <h2 className="text-[15px] font-semibold tracking-tight">
+            Week of {formatDate(monday)}
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {formatDate(monday)} – {sunday}
           </p>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" className="h-8" onClick={() => navigateWeek(-1)}>
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" className="h-8 min-h-0" onClick={() => navigateWeek(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={goToday}>Today</Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => navigateWeek(1)}>
+          <Button variant="outline" size="sm" className="h-8 min-h-0" onClick={goToday}>Today</Button>
+          <Button variant="outline" size="sm" className="h-8 min-h-0" onClick={() => navigateWeek(1)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
+
+      {!isLoading && !error && entries.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.calories)}</span>
+            <span className="block text-[10px] text-muted-foreground">kcal</span>
+          </div>
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.protein)}g</span>
+            <span className="block text-[10px] text-muted-foreground">protein</span>
+          </div>
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.carbs)}g</span>
+            <span className="block text-[10px] text-muted-foreground">carbs</span>
+          </div>
+          <div className="rounded-lg border bg-card p-3 text-center">
+            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.fat)}g</span>
+            <span className="block text-[10px] text-muted-foreground">fat</span>
+          </div>
+          {!weekNutrition.isComplete && (
+            <div className="col-span-full text-center text-[10px] text-yellow-600 dark:text-yellow-400">
+              {weekNutrition.missingCount} meal{weekNutrition.missingCount > 1 ? 's' : ''} with incomplete nutrition
+            </div>
+          )}
+          {dayAverages && (
+            <div className="col-span-full text-center text-[10px] text-muted-foreground">
+              Daily avg: {round1dp(dayAverages.calories)} kcal · {round1dp(dayAverages.protein)}g P · {round1dp(dayAverages.carbs)}g C · {round1dp(dayAverages.fat)}g F
+            </div>
+          )}
+        </div>
+      )}
 
       {missingRecipes.length > 0 && (
         <div className="rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/50 p-3 flex items-start gap-2">
@@ -279,66 +312,41 @@ export default function PlannerPage() {
         </Card>
       )}
 
+      {!isLoading && !error && entries.length === 0 && (
+        <div className="rounded-lg border border-dashed p-4 text-center">
+          <p className="text-muted-foreground text-sm">No meals yet this week. Click + in any slot to get started.</p>
+        </div>
+      )}
+
       {!isLoading && !error && (
         <>
-          <div className="md:hidden flex gap-1 overflow-x-auto pb-2">
+          <div className="flex gap-1.5 overflow-x-auto pb-3 justify-center">
             {days.map((day, idx) => {
               const key = formatDate(day);
               const t = dayTotals.get(key);
+              const today = isSameDay(day, new Date());
               return (
                 <button
                   key={key}
                   onClick={() => setSelectedDay(idx)}
                   className={cn(
-                    'flex-shrink-0 rounded-lg border px-3 py-2 text-xs text-center min-w-[72px]',
-                    selectedDay === idx ? 'border-primary bg-primary/5 text-primary' : 'text-muted-foreground',
+                    'flex-shrink-0 rounded-xl border px-4 py-2.5 text-xs text-center min-w-[80px] transition-colors',
+                    selectedDay === idx
+                      ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                      : today
+                        ? 'border-primary/40 text-foreground'
+                        : 'border text-muted-foreground hover:bg-muted/50',
                   )}
                 >
-                  <span className="block font-medium">{DAY_LABELS[idx]}</span>
-                  <span className="block text-[10px]">{day.getDate()}</span>
-                  {t && <span className="block text-[10px] mt-0.5">{round1dp(t.kcal)} kcal</span>}
+                  <span className="block font-semibold">{DAY_LABELS[idx]}</span>
+                  <span className={cn('block text-lg font-bold mt-0.5', selectedDay === idx ? 'text-primary-foreground' : '')}>{day.getDate()}</span>
+                  {t && <span className="block text-[10px] mt-0.5 opacity-80">{round1dp(t.kcal)} kcal</span>}
                 </button>
               );
             })}
           </div>
 
-          <div className="hidden md:grid grid-cols-7 gap-2">
-            {days.map((day) => {
-              const key = formatDate(day);
-              const dayData = grouped.get(key) || new Map();
-              const t = dayTotals.get(key);
-              const today = isSameDay(day, new Date());
-              return (
-                <div key={key} className={cn('rounded-lg border p-2 space-y-1.5', today && 'border-primary/50 bg-primary/5')}>
-                  <div className="text-center">
-                    <span className="text-xs font-semibold">
-                      {DAY_LABELS[day.getDay() === 0 ? 6 : day.getDay() - 1]} {day.getDate()}
-                    </span>
-                    {t && <span className="block text-[10px] text-muted-foreground">{round1dp(t.kcal)} kcal</span>}
-                  </div>
-                  {SLOT_ORDER.map((slot) => {
-                    const slotEntries = dayData.get(slot) || [];
-                    return (
-                      <div key={slot} className="min-h-[40px]">
-                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{SLOT_LABELS[slot]}</span>
-                        {slotEntries.map((e: MealPlanEntry) => renderEntry(e, true))}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full h-6 text-[10px] text-muted-foreground mt-0.5"
-                          onClick={() => handleAdd(key, slot)}
-                        >
-                          <Plus className="h-3 w-3 mr-0.5" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="md:hidden space-y-3">
+          <div className="space-y-4">
             {(() => {
               const key = formatDate(days[selectedDay]);
               const dayData = grouped.get(key) || new Map();
@@ -346,18 +354,18 @@ export default function PlannerPage() {
                 const slotEntries = dayData.get(slot) || [];
                 return (
                   <div key={slot}>
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{SLOT_LABELS[slot]}</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{SLOT_LABELS[slot]}</h3>
                     {slotEntries.length === 0 ? (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full justify-start text-muted-foreground"
+                        className="w-full justify-start text-muted-foreground h-9 rounded-lg border-dashed"
                         onClick={() => handleAdd(key, slot)}
                       >
-                        <Plus className="h-3 w-3 mr-1" /> Add {SLOT_LABELS[slot]}
+                        <Plus className="h-4 w-4 mr-1.5" /> Add {SLOT_LABELS[slot]}
                       </Button>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {slotEntries.map((e: MealPlanEntry) => renderEntry(e))}
                       </div>
                     )}

@@ -2,12 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MealPlanEntry } from '../schemas/meal-plan.schema';
 import { mealPlanRepository } from '../repositories/meal-plan.repository';
 import { makeId } from '@/shared/lib/ids';
-
-const KEY = ['meal-plan'] as const;
+import { queryKeys } from '@/shared/constants/query-keys';
 
 export function useMealPlanEntries(startDate: string, endDate: string) {
   return useQuery({
-    queryKey: [...KEY, { startDate, endDate }],
+    queryKey: queryKeys.mealPlan.range(startDate, endDate),
     queryFn: () => mealPlanRepository.getByDateRange(startDate, endDate),
   });
 }
@@ -18,7 +17,7 @@ export function useCreateMealPlanEntry() {
     mutationFn: async (entry: MealPlanEntry) => {
       return mealPlanRepository.save(entry);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.mealPlan.all }),
   });
 }
 
@@ -28,7 +27,7 @@ export function useUpdateMealPlanEntry() {
     mutationFn: async (entry: MealPlanEntry) => {
       return mealPlanRepository.save(entry);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.mealPlan.all }),
   });
 }
 
@@ -38,7 +37,7 @@ export function useDeleteMealPlanEntry() {
     mutationFn: async (id: string) => {
       await mealPlanRepository.delete(id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.mealPlan.all }),
   });
 }
 
@@ -49,7 +48,7 @@ export function useDuplicateMealPlanEntry() {
       const dup: MealPlanEntry = { ...source, id: makeId(), createdAt: Date.now(), updatedAt: Date.now() };
       return mealPlanRepository.save(dup);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.mealPlan.all }),
   });
 }
 
@@ -69,6 +68,6 @@ export function useMoveMealPlanEntry() {
       };
       return mealPlanRepository.save(updated);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.mealPlan.all }),
   });
 }

@@ -7,4 +7,11 @@ export const queryKeys = {
     all: ['ingredients'] as const,
     detail: (id: string) => ['ingredients', id] as const,
   },
+  dryToCooked: {
+    all: ['dry-to-cooked'] as const,
+  },
+  mealPlan: {
+    all: ['meal-plan'] as const,
+    range: (startDate: string, endDate: string) => ['meal-plan', { startDate, endDate }] as const,
+  },
 } as const;

@@ -32,6 +32,7 @@ export function useUpdateIngredient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.ingredients.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.mealPlan.all });
     },
   });
 }

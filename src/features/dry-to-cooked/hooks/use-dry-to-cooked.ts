@@ -4,8 +4,7 @@ import { dryToCookedRepository } from '../repositories/dry-to-cooked.repository'
 import { supabaseCalcRepository } from '../repositories/supabase-calc.repository';
 import { makeId } from '@/shared/lib/ids';
 import { getSupabaseClientOrNull } from '@/infrastructure/supabase/client';
-
-const KEY = ['dry-to-cooked'] as const;
+import { queryKeys } from '@/shared/constants/query-keys';
 
 function getRepo() {
   return getSupabaseClientOrNull() ? supabaseCalcRepository : dryToCookedRepository;
@@ -13,7 +12,7 @@ function getRepo() {
 
 export function useDryToCookedCalculations() {
   return useQuery({
-    queryKey: KEY,
+    queryKey: queryKeys.dryToCooked.all,
     queryFn: () => getRepo().getAll(),
   });
 }
@@ -24,7 +23,7 @@ export function useSaveDryToCookedCalculation() {
     mutationFn: async (calc: SavedCalculation) => {
       return getRepo().save(calc);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.dryToCooked.all }),
   });
 }
 
@@ -34,7 +33,7 @@ export function useDeleteDryToCookedCalculation() {
     mutationFn: async (id: string) => {
       await getRepo().delete(id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.dryToCooked.all }),
   });
 }
 
@@ -44,6 +43,6 @@ export function useDuplicateDryToCookedCalculation() {
     mutationFn: async (source: SavedCalculation) => {
       await getRepo().duplicate(source, makeId());
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.dryToCooked.all }),
   });
 }
