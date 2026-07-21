@@ -163,6 +163,27 @@ export interface Database {
         };
         Relationships: never[];
       };
+      data_migrations: {
+        Row: {
+          id: string;
+          user_id: string;
+          migration_key: string;
+          applied_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          migration_key: string;
+          applied_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          migration_key?: string;
+          applied_at?: string;
+        };
+        Relationships: never[];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

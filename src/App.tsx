@@ -22,6 +22,7 @@ import SignInPage from '@/features/auth/pages/sign-in-page';
 import { ProtectedRoute } from '@/app/components/ProtectedRoute';
 import { RootRoute } from '@/app/components/RootRoute';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { MigrationPrompt } from '@/features/migration/components/MigrationPrompt';
 
 export default function App() {
   const { data: recipes = [] } = useRecipes();
@@ -119,6 +120,7 @@ export default function App() {
 
   return (
     <AppShell>
+      <MigrationPrompt />
       <ErrorBoundary>
       <Routes>
         <Route path="/" element={<RootRoute />} />
