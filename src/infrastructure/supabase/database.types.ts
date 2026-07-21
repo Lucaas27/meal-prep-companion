@@ -13,6 +13,9 @@ export interface Database {
           fat_per_100g: number;
           category: string | null;
           source: string | null;
+          external_source_id: string | null;
+          external_source_name: string | null;
+          imported_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -27,6 +30,9 @@ export interface Database {
           fat_per_100g?: number;
           category?: string | null;
           source?: string | null;
+          external_source_id?: string | null;
+          external_source_name?: string | null;
+          imported_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -41,6 +47,9 @@ export interface Database {
           fat_per_100g?: number;
           category?: string | null;
           source?: string | null;
+          external_source_id?: string | null;
+          external_source_name?: string | null;
+          imported_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

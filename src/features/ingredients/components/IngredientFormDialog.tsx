@@ -80,6 +80,9 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
       fatPer100g: Number(fat) || 0,
       category,
       source: ingredient?.source ?? 'custom',
+      externalSourceId: ingredient?.externalSourceId ?? null,
+      externalSourceName: ingredient?.externalSourceName ?? null,
+      importedAt: ingredient?.importedAt ?? null,
       createdAt: ingredient?.createdAt ?? Date.now(),
       updatedAt: Date.now(),
     });

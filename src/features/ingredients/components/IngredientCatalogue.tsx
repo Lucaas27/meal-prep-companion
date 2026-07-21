@@ -22,6 +22,7 @@ import { Search, Plus, Trash2, Pencil, Carrot } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
 import { normaliseName } from '@/shared/utils/format';
+import { SOURCE_LABELS } from '../schemas/ingredient.schema';
 
 const SORT_KEY = 'ingredient-catalogue-sort';
 const PAGE_SIZE_KEY = 'ingredient-catalogue-page-size';
@@ -227,7 +228,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="font-medium text-sm truncate">{ing.name}</span>
                       <Badge variant={ing.source === 'starter' ? 'secondary' : 'outline'} className="text-[10px] font-medium">
-                        {ing.source === 'starter' ? 'starter' : 'custom'}
+                        {SOURCE_LABELS[ing.source] || ing.source}
                       </Badge>
                       {ing.category && (
                         <span className="text-[11px] text-muted-foreground">{ing.category}</span>

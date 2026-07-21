@@ -18,16 +18,18 @@ function makeIngredient(overrides: Record<string, unknown> = {}) {
     source: 'custom' as const,
     createdAt: 1000,
     updatedAt: 1000,
+    externalSourceId: null,
+    externalSourceName: null,
+    importedAt: null,
     ...overrides,
   };
 }
 
 describe('ingredientRepository', () => {
   describe('getAll', () => {
-    it('seeds starters when storage is missing', () => {
+    it('returns empty when storage is missing', () => {
       const result = ingredientRepository.getAll();
-      expect(result.length).toBeGreaterThan(0);
-      expect(result[0].source).toBe('starter');
+      expect(result).toEqual([]);
     });
 
     it('respects an intentionally empty array', () => {
@@ -82,12 +84,11 @@ describe('ingredientRepository', () => {
   });
 
   describe('clear', () => {
-    it('removes all then reseeds', () => {
+    it('removes all data', () => {
       ingredientRepository.save(makeIngredient());
       ingredientRepository.clear();
       const result = ingredientRepository.getAll();
-      expect(result.length).toBeGreaterThan(0);
-      expect(result.every((i) => i.source === 'starter')).toBe(true);
+      expect(result).toEqual([]);
     });
   });
 });

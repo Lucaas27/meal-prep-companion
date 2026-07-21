@@ -12,7 +12,10 @@ export function mapIngredientRow(row: IngredientRow): StoredIngredient {
     carbsPer100g: row.carbs_per_100g,
     fatPer100g: row.fat_per_100g,
     category: row.category ?? '',
-    source: (row.source === 'starter' ? 'starter' : 'custom') as 'starter' | 'custom',
+    source: (row.source === 'starter' || row.source === 'custom' || row.source === 'usda' || row.source === 'open-food-facts') ? row.source : 'custom',
+    externalSourceId: row.external_source_id || null,
+    externalSourceName: row.external_source_name || null,
+    importedAt: row.imported_at ? new Date(row.imported_at).getTime() : null,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
   };
@@ -33,5 +36,8 @@ export function ingredientToRow(
     fat_per_100g: ingredient.fatPer100g,
     category: ingredient.category || null,
     source: ingredient.source || null,
+    external_source_id: ingredient.externalSourceId,
+    external_source_name: ingredient.externalSourceName,
+    imported_at: ingredient.importedAt ? new Date(ingredient.importedAt).toISOString() : null,
   };
 }

@@ -1,12 +1,8 @@
 import type { StoredIngredient } from '../schemas/ingredient.schema';
 import { storedIngredientSchema } from '../schemas/ingredient.schema';
-import type { Database } from '@/infrastructure/supabase/database.types';
 import { getSupabaseClient } from '@/infrastructure/supabase/client';
 import { mapIngredientRow, ingredientToRow } from './ingredient-mapper';
 import { normaliseName } from '@/shared/utils/format';
-import { STARTER_INGREDIENTS } from '../data/seed-data';
-
-type IngredientInsert = Database['public']['Tables']['ingredients']['Insert'];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function asInsert(row: Record<string, unknown>): any {
@@ -34,23 +30,6 @@ export const supabaseIngredientRepository = {
       }
     }
     return valid;
-  },
-
-  async seedStarters(userId: string): Promise<void> {
-    const supabase = getSupabaseClient();
-    const rows: IngredientInsert[] = STARTER_INGREDIENTS.map((ing) => ({
-      ...ingredientToRow(ing, userId),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { error } = await supabase.from('ingredients').upsert(rows as never[], {
-      onConflict: 'user_id, normalized_name',
-    });
-
-    if (error) {
-      console.error('Failed to seed starter ingredients:', error);
-    }
   },
 
   async getById(id: string): Promise<StoredIngredient | undefined> {
