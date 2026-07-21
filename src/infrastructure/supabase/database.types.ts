@@ -46,6 +46,69 @@ export interface Database {
         };
         Relationships: never[];
       };
+      recipes: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          portions: number;
+          notes: string;
+          tags: string[] | null;
+          favourite: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          name: string;
+          portions: number;
+          notes?: string;
+          tags?: string[] | null;
+          favourite?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          portions?: number;
+          notes?: string;
+          tags?: string[] | null;
+          favourite?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
+      };
+      recipe_ingredients: {
+        Row: {
+          id: string;
+          recipe_id: string;
+          ingredient_id: string;
+          quantity_grams: number;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipe_id: string;
+          ingredient_id: string;
+          quantity_grams: number;
+          position?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipe_id?: string;
+          ingredient_id?: string;
+          quantity_grams?: number;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: never[];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
