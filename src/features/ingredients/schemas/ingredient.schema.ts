@@ -5,6 +5,8 @@ export const storedIngredientSchema = z.object({
   name: z.string().min(1),
   caloriesPer100g: z.number().min(0),
   proteinPer100g: z.number().min(0),
+  carbsPer100g: z.number().min(0).default(0),
+  fatPer100g: z.number().min(0).default(0),
 });
 
 export const storedIngredientsArraySchema = z.array(storedIngredientSchema);

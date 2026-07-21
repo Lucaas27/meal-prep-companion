@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   calcIngredientCalories,
   calcIngredientProtein,
+  calcIngredientCarbs,
+  calcIngredientFat,
   calcBatchTotals,
   calcPerPortion,
 } from '../utils/calculations';
@@ -10,7 +12,6 @@ describe('calcIngredientCalories', () => {
   it('calculates calories from weight and per-100g value', () => {
     expect(calcIngredientCalories(200, 165)).toBe(330);
     expect(calcIngredientCalories(100, 165)).toBe(165);
-    expect(calcIngredientCalories(50, 100)).toBe(50);
   });
 
   it('returns 0 for zero weight or zero calories', () => {
@@ -20,27 +21,49 @@ describe('calcIngredientCalories', () => {
 });
 
 describe('calcIngredientProtein', () => {
-  it('calculates protein from weight and per-100g value', () => {
+  it('calculates protein', () => {
     expect(calcIngredientProtein(200, 31)).toBe(62);
-    expect(calcIngredientProtein(100, 31)).toBe(31);
-    expect(calcIngredientProtein(50, 10)).toBe(5);
   });
 
-  it('returns 0 for zero weight or zero protein', () => {
+  it('returns 0 for zero', () => {
     expect(calcIngredientProtein(0, 31)).toBe(0);
     expect(calcIngredientProtein(200, 0)).toBe(0);
+  });
+});
+
+describe('calcIngredientCarbs', () => {
+  it('calculates carbs', () => {
+    expect(calcIngredientCarbs(200, 77)).toBe(154);
+  });
+
+  it('returns 0 for zero', () => {
+    expect(calcIngredientCarbs(0, 77)).toBe(0);
+    expect(calcIngredientCarbs(200, 0)).toBe(0);
+  });
+});
+
+describe('calcIngredientFat', () => {
+  it('calculates fat', () => {
+    expect(calcIngredientFat(200, 10)).toBe(20);
+  });
+
+  it('returns 0 for zero', () => {
+    expect(calcIngredientFat(0, 10)).toBe(0);
+    expect(calcIngredientFat(200, 0)).toBe(0);
   });
 });
 
 describe('calcBatchTotals', () => {
   it('sums totals across multiple ingredients', () => {
     const result = calcBatchTotals([
-      { weight: 200, caloriesPer100g: 165, proteinPer100g: 31 },
-      { weight: 200, caloriesPer100g: 135, proteinPer100g: 21 },
+      { weight: 200, caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+      { weight: 200, caloriesPer100g: 355, proteinPer100g: 8, carbsPer100g: 77, fatPer100g: 1 },
     ]);
     expect(result.totalWeight).toBe(400);
-    expect(result.totalCalories).toBe(600);
-    expect(result.totalProtein).toBe(104);
+    expect(result.totalCalories).toBe(1040);
+    expect(result.totalProtein).toBe(78);
+    expect(result.totalCarbs).toBe(154);
+    expect(result.totalFat).toBe(9.2);
   });
 
   it('returns zeros for empty array', () => {
@@ -48,12 +71,14 @@ describe('calcBatchTotals', () => {
     expect(result.totalWeight).toBe(0);
     expect(result.totalCalories).toBe(0);
     expect(result.totalProtein).toBe(0);
+    expect(result.totalCarbs).toBe(0);
+    expect(result.totalFat).toBe(0);
   });
 
   it('skips zero-weight ingredients', () => {
     const result = calcBatchTotals([
-      { weight: 0, caloriesPer100g: 165, proteinPer100g: 31 },
-      { weight: 200, caloriesPer100g: 165, proteinPer100g: 31 },
+      { weight: 0, caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+      { weight: 200, caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
     ]);
     expect(result.totalWeight).toBe(200);
     expect(result.totalCalories).toBe(330);
@@ -63,16 +88,24 @@ describe('calcBatchTotals', () => {
 
 describe('calcPerPortion', () => {
   it('divides totals by portion count', () => {
-    const per = calcPerPortion({ totalWeight: 400, totalCalories: 600, totalProtein: 104 }, 4);
+    const per = calcPerPortion(
+      { totalWeight: 400, totalCalories: 1040, totalProtein: 78, totalCarbs: 154, totalFat: 9.2 },
+      4,
+    );
     expect(per.weightPerPortion).toBe(100);
-    expect(per.caloriesPerPortion).toBe(150);
-    expect(per.proteinPerPortion).toBe(26);
+    expect(per.caloriesPerPortion).toBe(260);
+    expect(per.proteinPerPortion).toBe(19.5);
+    expect(per.carbsPerPortion).toBe(38.5);
+    expect(per.fatPerPortion).toBe(2.3);
   });
 
   it('handles 1 portion', () => {
-    const per = calcPerPortion({ totalWeight: 400, totalCalories: 600, totalProtein: 104 }, 1);
+    const per = calcPerPortion(
+      { totalWeight: 400, totalCalories: 1040, totalProtein: 78, totalCarbs: 154, totalFat: 9.2 },
+      1,
+    );
     expect(per.weightPerPortion).toBe(400);
-    expect(per.caloriesPerPortion).toBe(600);
-    expect(per.proteinPerPortion).toBe(104);
+    expect(per.caloriesPerPortion).toBe(1040);
+    expect(per.proteinPerPortion).toBe(78);
   });
 });

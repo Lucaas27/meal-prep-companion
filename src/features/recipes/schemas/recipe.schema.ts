@@ -6,6 +6,8 @@ export const ingredientSchema = z.object({
   weight: z.number().min(0),
   caloriesPer100g: z.number().min(0),
   proteinPer100g: z.number().min(0),
+  carbsPer100g: z.number().min(0).default(0),
+  fatPer100g: z.number().min(0).default(0),
 });
 
 export const recipeSchema = z.object({
@@ -14,8 +16,10 @@ export const recipeSchema = z.object({
   portions: z.number().int().min(1),
   ingredients: z.array(ingredientSchema),
   createdAt: z.number(),
+  updatedAt: z.number().default(0),
   tags: z.array(z.string()).default([]),
   favourite: z.boolean().default(false),
+  notes: z.string().default(''),
 });
 
 export const recipesArraySchema = z.array(recipeSchema);

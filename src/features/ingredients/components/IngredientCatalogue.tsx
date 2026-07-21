@@ -20,6 +20,8 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
   const [name, setName] = useState('');
   const [caloriesPer100g, setCaloriesPer100g] = useState('');
   const [proteinPer100g, setProteinPer100g] = useState('');
+  const [carbsPer100g, setCarbsPer100g] = useState('');
+  const [fatPer100g, setFatPer100g] = useState('');
 
   const canAdd = name.trim().length > 0;
 
@@ -30,10 +32,14 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
       name: name.trim(),
       caloriesPer100g: Number(caloriesPer100g) || 0,
       proteinPer100g: Number(proteinPer100g) || 0,
+      carbsPer100g: Number(carbsPer100g) || 0,
+      fatPer100g: Number(fatPer100g) || 0,
     });
     setName('');
     setCaloriesPer100g('');
     setProteinPer100g('');
+    setCarbsPer100g('');
+    setFatPer100g('');
   };
 
   return (
@@ -54,39 +60,26 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
           <CardDescription>Per 100g nutritional values.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="cat-name" className="text-[13px]">Name</Label>
-              <Input
-                id="cat-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Chicken breast"
-              />
+              <Input id="cat-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Chicken breast" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cat-cal" className="text-[13px]">Cal / 100g</Label>
-              <Input
-                id="cat-cal"
-                type="number"
-                value={caloriesPer100g}
-                onChange={(e) => setCaloriesPer100g(e.target.value)}
-                placeholder="165"
-                min="0"
-                step="0.1"
-              />
+              <Input id="cat-cal" type="number" value={caloriesPer100g} onChange={(e) => setCaloriesPer100g(e.target.value)} placeholder="165" min="0" step="0.1" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cat-prot" className="text-[13px]">Prot / 100g</Label>
-              <Input
-                id="cat-prot"
-                type="number"
-                value={proteinPer100g}
-                onChange={(e) => setProteinPer100g(e.target.value)}
-                placeholder="31"
-                min="0"
-                step="0.1"
-              />
+              <Input id="cat-prot" type="number" value={proteinPer100g} onChange={(e) => setProteinPer100g(e.target.value)} placeholder="31" min="0" step="0.1" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cat-carbs" className="text-[13px]">Carbs / 100g</Label>
+              <Input id="cat-carbs" type="number" value={carbsPer100g} onChange={(e) => setCarbsPer100g(e.target.value)} placeholder="0" min="0" step="0.1" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cat-fat" className="text-[13px]">Fat / 100g</Label>
+              <Input id="cat-fat" type="number" value={fatPer100g} onChange={(e) => setFatPer100g(e.target.value)} placeholder="0" min="0" step="0.1" />
             </div>
           </div>
           <Button onClick={handleAdd} disabled={!canAdd} size="sm">

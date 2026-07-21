@@ -83,7 +83,7 @@ export function RecipeGridView({
               </div>
 
               {per && (
-                <div className="grid grid-cols-3 gap-2.5 mb-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
                   <div className="bg-muted/70 rounded-lg p-2.5 text-center">
                     <span className="block text-base font-semibold tracking-tight">
                       {round1dp(per.caloriesPerPortion)}
@@ -98,9 +98,15 @@ export function RecipeGridView({
                   </div>
                   <div className="bg-muted/70 rounded-lg p-2.5 text-center">
                     <span className="block text-base font-semibold tracking-tight">
-                      {round1dp(per.weightPerPortion)}g
+                      {round1dp(per.carbsPerPortion)}g
                     </span>
-                    <span className="block text-[11px] text-muted-foreground mt-0.5">weight</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">carbs</span>
+                  </div>
+                  <div className="bg-muted/70 rounded-lg p-2.5 text-center">
+                    <span className="block text-base font-semibold tracking-tight">
+                      {round1dp(per.fatPerPortion)}g
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">fat</span>
                   </div>
                 </div>
               )}

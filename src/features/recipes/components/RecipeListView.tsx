@@ -29,10 +29,12 @@ export function RecipeListView({
             <TableHead className="w-[30px]" />
             <TableHead>Name</TableHead>
             <TableHead className="text-right">kcal</TableHead>
-            <TableHead className="text-right hidden sm:table-cell">Protein</TableHead>
+            <TableHead className="text-right hidden sm:table-cell">P</TableHead>
+            <TableHead className="text-right hidden md:table-cell">C</TableHead>
+            <TableHead className="text-right hidden md:table-cell">F</TableHead>
             <TableHead className="text-right">Portions</TableHead>
-            <TableHead className="hidden md:table-cell">Tags</TableHead>
-            <TableHead className="hidden lg:table-cell">Created</TableHead>
+            <TableHead className="hidden lg:table-cell">Tags</TableHead>
+            <TableHead className="hidden xl:table-cell">Created</TableHead>
             <TableHead className="w-[100px]" />
           </TableRow>
         </TableHeader>
@@ -82,6 +84,12 @@ export function RecipeListView({
                 </TableCell>
                 <TableCell className="text-right tabular-nums hidden sm:table-cell">
                   {per ? `${round1dp(per.proteinPerPortion)}g` : '—'}
+                </TableCell>
+                <TableCell className="text-right tabular-nums hidden md:table-cell">
+                  {per ? `${round1dp(per.carbsPerPortion)}g` : '—'}
+                </TableCell>
+                <TableCell className="text-right tabular-nums hidden md:table-cell">
+                  {per ? `${round1dp(per.fatPerPortion)}g` : '—'}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {recipe.portions}

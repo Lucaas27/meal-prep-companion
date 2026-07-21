@@ -12,6 +12,8 @@ export default function DryCookedCalculator() {
     dryWeight: 200,
     dryCaloriesPer100g: 355,
     dryProteinPer100g: 8,
+    dryCarbsPer100g: 77,
+    dryFatPer100g: 1,
     cookedWeight: 460,
     portions: 4,
   });
@@ -52,58 +54,31 @@ export default function DryCookedCalculator() {
         <CardContent className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="dc-dry-weight" className="text-[13px]">Dry weight (g)</Label>
-            <Input
-              id="dc-dry-weight"
-              type="number"
-              value={inputs.dryWeight || ''}
-              onChange={(e) => handleChange('dryWeight', e.target.value)}
-              min="0"
-              step="1"
-            />
+            <Input id="dc-dry-weight" type="number" value={inputs.dryWeight || ''} onChange={(e) => handleChange('dryWeight', e.target.value)} min="0" step="1" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="dc-dry-cal" className="text-[13px]">Calories / 100g dry</Label>
-            <Input
-              id="dc-dry-cal"
-              type="number"
-              value={inputs.dryCaloriesPer100g || ''}
-              onChange={(e) => handleChange('dryCaloriesPer100g', e.target.value)}
-              min="0"
-              step="0.1"
-            />
+            <Input id="dc-dry-cal" type="number" value={inputs.dryCaloriesPer100g || ''} onChange={(e) => handleChange('dryCaloriesPer100g', e.target.value)} min="0" step="0.1" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="dc-dry-prot" className="text-[13px]">Protein / 100g dry</Label>
-            <Input
-              id="dc-dry-prot"
-              type="number"
-              value={inputs.dryProteinPer100g || ''}
-              onChange={(e) => handleChange('dryProteinPer100g', e.target.value)}
-              min="0"
-              step="0.1"
-            />
+            <Input id="dc-dry-prot" type="number" value={inputs.dryProteinPer100g || ''} onChange={(e) => handleChange('dryProteinPer100g', e.target.value)} min="0" step="0.1" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="dc-dry-carbs" className="text-[13px]">Carbs / 100g dry</Label>
+            <Input id="dc-dry-carbs" type="number" value={inputs.dryCarbsPer100g || ''} onChange={(e) => handleChange('dryCarbsPer100g', e.target.value)} min="0" step="0.1" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="dc-dry-fat" className="text-[13px]">Fat / 100g dry</Label>
+            <Input id="dc-dry-fat" type="number" value={inputs.dryFatPer100g || ''} onChange={(e) => handleChange('dryFatPer100g', e.target.value)} min="0" step="0.1" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="dc-cooked" className="text-[13px]">Cooked batch weight (g)</Label>
-            <Input
-              id="dc-cooked"
-              type="number"
-              value={inputs.cookedWeight || ''}
-              onChange={(e) => handleChange('cookedWeight', e.target.value)}
-              min="0"
-              step="1"
-            />
+            <Input id="dc-cooked" type="number" value={inputs.cookedWeight || ''} onChange={(e) => handleChange('cookedWeight', e.target.value)} min="0" step="1" />
           </div>
           <div className="space-y-1.5 col-span-2 sm:col-span-1">
             <Label htmlFor="dc-portions" className="text-[13px]">Portions</Label>
-            <Input
-              id="dc-portions"
-              type="number"
-              value={inputs.portions || ''}
-              onChange={(e) => handleChange('portions', e.target.value)}
-              min="1"
-              step="1"
-            />
+            <Input id="dc-portions" type="number" value={inputs.portions || ''} onChange={(e) => handleChange('portions', e.target.value)} min="1" step="1" />
           </div>
         </CardContent>
       </Card>
@@ -122,18 +97,30 @@ export default function DryCookedCalculator() {
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Batch Totals
             </h3>
-            <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div>
                 <span className="block text-lg font-semibold tracking-tight">
                   {round1dp(totals.totalCalories)}
                 </span>
-                <span className="block text-[11px] text-muted-foreground mt-0.5">kcal total</span>
+                <span className="block text-[11px] text-muted-foreground mt-0.5">kcal</span>
               </div>
               <div>
                 <span className="block text-lg font-semibold tracking-tight">
                   {round1dp(totals.totalProtein)}g
                 </span>
-                <span className="block text-[11px] text-muted-foreground mt-0.5">protein total</span>
+                <span className="block text-[11px] text-muted-foreground mt-0.5">protein</span>
+              </div>
+              <div>
+                <span className="block text-lg font-semibold tracking-tight">
+                  {round1dp(totals.totalCarbs)}g
+                </span>
+                <span className="block text-[11px] text-muted-foreground mt-0.5">carbs</span>
+              </div>
+              <div>
+                <span className="block text-lg font-semibold tracking-tight">
+                  {round1dp(totals.totalFat)}g
+                </span>
+                <span className="block text-[11px] text-muted-foreground mt-0.5">fat</span>
               </div>
             </div>
           </div>
@@ -145,7 +132,7 @@ export default function DryCookedCalculator() {
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   Per 100g Cooked
                 </h3>
-                <div className="grid grid-cols-2 gap-3 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                   <div>
                     <span className="block text-lg font-semibold tracking-tight">
                       {round1dp(per100g.caloriesPer100gCooked)}
@@ -157,6 +144,18 @@ export default function DryCookedCalculator() {
                       {round1dp(per100g.proteinPer100gCooked)}g
                     </span>
                     <span className="block text-[11px] text-muted-foreground mt-0.5">protein</span>
+                  </div>
+                  <div>
+                    <span className="block text-lg font-semibold tracking-tight">
+                      {round1dp(per100g.carbsPer100gCooked)}g
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">carbs</span>
+                  </div>
+                  <div>
+                    <span className="block text-lg font-semibold tracking-tight">
+                      {round1dp(per100g.fatPer100gCooked)}g
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">fat</span>
                   </div>
                 </div>
               </div>
@@ -170,7 +169,7 @@ export default function DryCookedCalculator() {
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   Per Portion ({inputs.portions})
                 </h3>
-                <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                   <div className="bg-primary/5 rounded-lg p-3">
                     <span className="block text-xl font-semibold tracking-tight text-primary">
                       {round1dp(perPortion.caloriesPerPortion)}
@@ -185,9 +184,15 @@ export default function DryCookedCalculator() {
                   </div>
                   <div className="rounded-lg p-3">
                     <span className="block text-xl font-semibold tracking-tight">
-                      {round1dp(perPortion.gramsPerPortion)}g
+                      {round1dp(perPortion.carbsPerPortion)}g
                     </span>
-                    <span className="block text-[11px] text-muted-foreground mt-0.5">cooked weight</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">carbs</span>
+                  </div>
+                  <div className="rounded-lg p-3">
+                    <span className="block text-xl font-semibold tracking-tight">
+                      {round1dp(perPortion.fatPerPortion)}g
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">fat</span>
                   </div>
                 </div>
               </div>
