@@ -18,11 +18,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Search, Plus, Trash2, Pencil, Carrot } from 'lucide-react';
+import { Search, Plus, Trash2, Pencil, Carrot, Database } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
 import { normaliseName } from '@/shared/utils/format';
 import { SOURCE_LABELS } from '../schemas/ingredient.schema';
+import { ExternalFoodSearchDialog } from '@/features/external-catalogue/components/ExternalFoodSearchDialog';
 
 const SORT_KEY = 'ingredient-catalogue-sort';
 const PAGE_SIZE_KEY = 'ingredient-catalogue-page-size';
@@ -66,6 +67,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<StoredIngredient | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => {
     const saved = localStorage.getItem(PAGE_SIZE_KEY);
@@ -148,10 +150,16 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
             {ingredients.length} {ingredients.length === 1 ? 'ingredient' : 'ingredients'}
           </p>
         </div>
-        <Button onClick={handleCreate} size="sm">
-          <Plus className="h-4 w-4 mr-1.5" />
-          New
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <Database className="h-4 w-4 mr-1.5" />
+            Import
+          </Button>
+          <Button onClick={handleCreate} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            New
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -297,6 +305,8 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
         ingredient={editingIngredient}
         onSave={handleSave}
       />
+
+      <ExternalFoodSearchDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }
