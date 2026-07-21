@@ -31,6 +31,25 @@ export function convertWeightToGrams(quantity: number, unit: WeightUnit): Quanti
   return { status: 'available', grams };
 }
 
-export function convertIngredientUnitToGrams(): QuantityToGramsResult {
-  return { status: 'unavailable', reason: 'missing-unit-conversion' };
+export function convertIngredientUnitToGrams(
+  quantity?: number,
+  gramsPerUnit?: number,
+): QuantityToGramsResult {
+  if (quantity === undefined || !Number.isFinite(quantity) || quantity < 0) {
+    return { status: 'unavailable', reason: 'invalid-quantity' };
+  }
+
+  if (!gramsPerUnit || gramsPerUnit <= 0 || !Number.isFinite(gramsPerUnit)) {
+    return { status: 'unavailable', reason: 'missing-unit-conversion' };
+  }
+
+  if (quantity === 0) {
+    return { status: 'available', grams: 0 };
+  }
+
+  const grams = quantity * gramsPerUnit;
+  if (!Number.isFinite(grams)) {
+    return { status: 'unavailable', reason: 'invalid-quantity' };
+  }
+  return { status: 'available', grams };
 }

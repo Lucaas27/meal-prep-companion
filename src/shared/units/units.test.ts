@@ -113,8 +113,31 @@ describe('convertWeightToGrams', () => {
 });
 
 describe('convertIngredientUnitToGrams', () => {
-  it('returns unavailable for any ingredient unit', () => {
+  it('returns unavailable when called without args', () => {
     const r = convertIngredientUnitToGrams();
+    expect(r.status).toBe('unavailable');
+  });
+
+  it('converts with grams per unit', () => {
+    const r = convertIngredientUnitToGrams(2, 13.5);
+    expect(r.status).toBe('available');
+    expect(r.grams).toBe(27);
+  });
+
+  it('handles zero quantity', () => {
+    const r = convertIngredientUnitToGrams(0, 13.5);
+    expect(r.status).toBe('available');
+    expect(r.grams).toBe(0);
+  });
+
+  it('returns unavailable for negative gramsPerUnit', () => {
+    const r = convertIngredientUnitToGrams(1, -1);
+    expect(r.status).toBe('unavailable');
+    expect(r.reason).toBe('missing-unit-conversion');
+  });
+
+  it('returns unavailable for zero gramsPerUnit', () => {
+    const r = convertIngredientUnitToGrams(1, 0);
     expect(r.status).toBe('unavailable');
     expect(r.reason).toBe('missing-unit-conversion');
   });

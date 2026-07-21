@@ -47,7 +47,7 @@ export default function IngredientRow({ ingredient, onChange, onDelete }: Props)
 
   return (
     <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="col-span-2 sm:col-span-1 space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Ingredient
@@ -56,28 +56,27 @@ export default function IngredientRow({ ingredient, onChange, onDelete }: Props)
         </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Quantity</Label>
-          <div className="flex gap-1">
-            <Input
-              type="number"
-              className="flex-1"
-              value={ingredient.weight || ''}
-              onChange={(e) => handleChange('weight', e.target.value)}
-              placeholder="200"
-              min="0"
-              step="any"
-            />
-            <Select value={unit} onValueChange={handleUnitChange}>
-              <SelectTrigger className="w-[65px] shrink-0 text-xs min-h-0">
-                <SelectValue>{UNIT_META[unit]?.abbr || unit}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {WEIGHT_UNIT_OPTIONS.map((u) => (
-                  <SelectItem key={u} value={u}>{UNIT_META[u].abbr}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Input
+            type="text"
+            inputMode="decimal"
+            value={ingredient.weight || ''}
+            onChange={(e) => handleChange('weight', e.target.value)}
+            placeholder="200"
+          />
           {gramsLabel && <span className="text-[10px] text-muted-foreground">{gramsLabel}</span>}
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Unit</Label>
+          <Select value={unit} onValueChange={handleUnitChange}>
+            <SelectTrigger>
+              <SelectValue>{UNIT_META[unit]?.abbr || unit}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {WEIGHT_UNIT_OPTIONS.map((u) => (
+                <SelectItem key={u} value={u}>{UNIT_META[u].abbr}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Cal / 100g</Label>

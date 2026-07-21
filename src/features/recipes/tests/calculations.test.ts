@@ -83,13 +83,22 @@ describe('calcBatchTotals', () => {
     expect(result.totalCalories).toBeCloseTo(28.35, 1);
   });
 
-  it('marks ingredient-specific units as incomplete', () => {
+  it('uses provided conversion map for ingredient-specific units', () => {
+    const conversions = new Map<string, number>([['conv-1', 13.5]]);
     const result = calcBatchTotals([
-      { weight: 1, unit: 'cup', caloriesPer100g: 100, proteinPer100g: 10, carbsPer100g: 5, fatPer100g: 2 },
+      { weight: 2, unit: 'tbsp', unitConversionId: 'conv-1', caloriesPer100g: 100, proteinPer100g: 10, carbsPer100g: 5, fatPer100g: 2 },
+    ], conversions);
+    expect(result.isComplete).toBe(true);
+    expect(result.totalWeight).toBe(27);
+    expect(result.totalCalories).toBe(27); // (27/100)*100
+  });
+
+  it('marks incomplete when conversionId not in map', () => {
+    const result = calcBatchTotals([
+      { weight: 1, unit: 'cup', unitConversionId: 'missing', caloriesPer100g: 100, proteinPer100g: 10, carbsPer100g: 5, fatPer100g: 2 },
     ]);
     expect(result.isComplete).toBe(false);
     expect(result.incompleteCount).toBe(1);
-    expect(result.totalCalories).toBe(0);
   });
 
   it('handles mixed units', () => {

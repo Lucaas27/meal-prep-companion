@@ -46,7 +46,7 @@ interface CalcIngredient {
   fatPer100g: number;
 }
 
-function resolveGrams(ing: CalcIngredient): { grams: number; available: boolean } {
+function resolveGrams(ing: CalcIngredient, unitConversions?: Map<string, number>): { grams: number; available: boolean } {
   const unit = (ing.unit || 'g') as UnitId;
 
   if (unit === 'g') return { grams: ing.weight, available: true };
@@ -56,7 +56,8 @@ function resolveGrams(ing: CalcIngredient): { grams: number; available: boolean 
     return { grams: result.grams!, available: true };
   }
 
-  const ingResult = convertIngredientUnitToGrams();
+  const gramsPerUnit = ing.unitConversionId ? unitConversions?.get(ing.unitConversionId) : undefined;
+  const ingResult = convertIngredientUnitToGrams(ing.weight, gramsPerUnit);
   if (ingResult.status === 'available') {
     return { grams: ingResult.grams!, available: true };
   }
@@ -64,7 +65,10 @@ function resolveGrams(ing: CalcIngredient): { grams: number; available: boolean 
   return { grams: 0, available: false };
 }
 
-export function calcBatchTotals(ingredients: CalcIngredient[]): IngredientTotals {
+export function calcBatchTotals(
+  ingredients: CalcIngredient[],
+  unitConversions?: Map<string, number>,
+): IngredientTotals {
   let totalWeight = 0;
   let totalCalories = 0;
   let totalProtein = 0;
@@ -73,7 +77,7 @@ export function calcBatchTotals(ingredients: CalcIngredient[]): IngredientTotals
   let incompleteCount = 0;
 
   for (const ing of ingredients) {
-    const { grams, available } = resolveGrams(ing);
+    const { grams, available } = resolveGrams(ing, unitConversions);
     if (!available) {
       incompleteCount++;
       continue;
