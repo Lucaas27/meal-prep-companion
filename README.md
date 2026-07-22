@@ -67,10 +67,34 @@ The function proxies USDA FoodData Central search through Supabase, requiring an
 
 The details function also requires an authenticated user and returns provider-neutral food details for the import review flow.
 
+**Barcode Product Lookup** (`food-catalogue-barcode`):
+
+1. Set the Open Food Facts request User-Agent as a Supabase secret/config value:
+   ```bash
+   npx supabase secrets set OPEN_FOOD_FACTS_USER_AGENT="Meal Prep Companion/1.3 (hello@example.com)"
+   ```
+
+2. Deploy:
+   ```bash
+   npx supabase functions deploy food-catalogue-barcode
+   ```
+
+3. For local development:
+   ```bash
+   npx supabase functions serve --env-file .env
+   ```
+
+The barcode function requires an authenticated user, checks the local barcode cache first, and falls back to Open Food Facts product-by-barcode lookup.
+
 ### USDA Attribution
 
 Imported food search and nutrition data comes from USDA FoodData Central.
 Imported foods are saved as user-owned editable copies in this app and do not stay synchronised with USDA after import.
+
+### Open Food Facts Attribution
+
+Barcode product lookup data comes from Open Food Facts.
+Open Food Facts entries may be incomplete or community-contributed, so barcode results must be reviewed before import.
 
 ## Known Limitations
 
