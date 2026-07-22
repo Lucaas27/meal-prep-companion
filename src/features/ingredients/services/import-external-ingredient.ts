@@ -133,11 +133,10 @@ export async function importExternalIngredient(input: ImportExternalIngredientIn
 
   const supabase = getSupabaseClient();
   const payload = parsedInput.data;
-  const rpc = (supabase as unknown as {
-    rpc: (fn: string, args: { p_payload: unknown }) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
-  }).rpc;
 
-  const { data, error } = await rpc('import_external_ingredient_atomic', {
+  const { data, error } = await (supabase as unknown as {
+    rpc: (fn: string, args: { p_payload: unknown }) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
+  }).rpc('import_external_ingredient_atomic', {
     p_payload: {
       name: payload.name,
       caloriesPer100g: payload.caloriesPer100g,
