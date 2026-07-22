@@ -22,11 +22,12 @@ const WEIGHT_UNITS: WeightUnit[] = ['g', 'kg', 'mg', 'oz', 'lb'];
 interface Props {
   ingredient: Ingredient;
   conversions?: UnitConversion[];
+  fromCatalogue?: boolean;
   onChange: (ingredient: Ingredient) => void;
   onDelete: () => void;
 }
 
-export default function IngredientRow({ ingredient, conversions = [], onChange, onDelete }: Props) {
+export default function IngredientRow({ ingredient, conversions = [], fromCatalogue = false, onChange, onDelete }: Props) {
   const handleChange = (field: keyof Ingredient, value: string) => {
     onChange({ ...ingredient, [field]: field === 'name' ? value : Number(value) });
   };
@@ -57,13 +58,13 @@ export default function IngredientRow({ ingredient, conversions = [], onChange, 
 
   return (
     <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <div className="col-span-2 sm:col-span-1 space-y-1.5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
+        <div className="col-span-2 space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Ingredient</Label>
-          <Input value={ingredient.name} onChange={(e) => handleChange('name', e.target.value)} placeholder="Chicken breast" />
+          <Input value={ingredient.name} onChange={(e) => handleChange('name', e.target.value)} placeholder="Chicken breast" disabled={fromCatalogue} />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Quantity</Label>
+          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Qty</Label>
           <Input type="text" inputMode="decimal" value={ingredient.weight || ''} onChange={(e) => handleChange('weight', e.target.value)} placeholder="200" />
           {gramsLabel && <span className="text-[10px] text-muted-foreground">{gramsLabel}</span>}
         </div>
@@ -83,23 +84,23 @@ export default function IngredientRow({ ingredient, conversions = [], onChange, 
             </SelectContent>
           </Select>
         </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Cal / 100g</Label>
-          <Input type="number" value={ingredient.caloriesPer100g || ''} onChange={(e) => handleChange('caloriesPer100g', e.target.value)} placeholder="165" min="0" step="0.1" />
+          <Input type="number" value={ingredient.caloriesPer100g || ''} onChange={(e) => handleChange('caloriesPer100g', e.target.value)} placeholder="165" min="0" step="0.1" disabled={fromCatalogue} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Prot / 100g</Label>
-          <Input type="number" value={ingredient.proteinPer100g || ''} onChange={(e) => handleChange('proteinPer100g', e.target.value)} placeholder="31" min="0" step="0.1" />
+          <Input type="number" value={ingredient.proteinPer100g || ''} onChange={(e) => handleChange('proteinPer100g', e.target.value)} placeholder="31" min="0" step="0.1" disabled={fromCatalogue} />
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Carbs / 100g</Label>
-          <Input type="number" value={ingredient.carbsPer100g || ''} onChange={(e) => handleChange('carbsPer100g', e.target.value)} placeholder="0" min="0" step="0.1" />
+          <Input type="number" value={ingredient.carbsPer100g || ''} onChange={(e) => handleChange('carbsPer100g', e.target.value)} placeholder="0" min="0" step="0.1" disabled={fromCatalogue} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fat / 100g</Label>
-          <Input type="number" value={ingredient.fatPer100g || ''} onChange={(e) => handleChange('fatPer100g', e.target.value)} placeholder="0" min="0" step="0.1" />
+          <Input type="number" value={ingredient.fatPer100g || ''} onChange={(e) => handleChange('fatPer100g', e.target.value)} placeholder="0" min="0" step="0.1" disabled={fromCatalogue} />
         </div>
       </div>
 

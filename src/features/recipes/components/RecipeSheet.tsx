@@ -33,10 +33,12 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,6 +99,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
 
   const ingredientIds = useMemo(() => ingredients.map((ing) => ing.id), [ingredients]);
   const { data: conversionsMap = new Map() } = useConversionsForIngredients(ingredientIds);
+  const storedIds = useMemo(() => new Set(storedIngredients.map((s) => s.id)), [storedIngredients]);
 
   const isDirty = useMemo(() => {
     if (name !== initialName) return true;
@@ -276,15 +279,18 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
               </Label>
             </div>
 
-            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" className="w-full justify-between text-sm font-normal">
+            <Dialog open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full justify-between text-sm font-normal">
                   <ShoppingBasket className="h-4 w-4 mr-2 text-muted-foreground" />
                   Search catalogue...
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="text-sm font-semibold">Select Ingredient</DialogTitle>
+                </DialogHeader>
                 <Command>
                   <CommandInput placeholder="Search ingredients..." />
                   <CommandList>
@@ -312,8 +318,8 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                     </CommandGroup>
                   </CommandList>
                 </Command>
-              </PopoverContent>
-            </Popover>
+              </DialogContent>
+            </Dialog>
 
             {ingredients.length === 0 ? (
               <div className="rounded-lg border border-dashed p-8 text-center">
@@ -327,6 +333,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                     key={ing.id}
                     ingredient={ing}
                     conversions={conversionsMap.get(ing.id) || []}
+                    fromCatalogue={storedIds.has(ing.id)}
                     onChange={updateIngredient}
                     onDelete={() => removeIngredient(ing.id)}
                   />

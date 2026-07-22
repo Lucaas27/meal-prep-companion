@@ -137,11 +137,19 @@ export function RecipeGridView({
               )}
 
               <div className="flex items-center gap-1.5 flex-wrap min-h-0">
-                {recipe.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-[10px] font-medium">
-                    {tag}
-                  </Badge>
-                ))}
+                {recipe.tags.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="text-[10px] font-medium cursor-default">{recipe.tags[0]}</Badge>
+                    </TooltipTrigger>
+                    {recipe.tags.length > 1 && (
+                      <TooltipContent side="top" className="text-xs">{recipe.tags.join(', ')}</TooltipContent>
+                    )}
+                  </Tooltip>
+                )}
+                {recipe.tags.length > 1 && (
+                  <span className="text-[10px] text-muted-foreground">+{recipe.tags.length - 1}</span>
+                )}
                 {recipe.ingredients.slice(0, 3).map((ing) => (
                   <Badge key={ing.id} variant="outline" className="text-[10px] font-medium text-muted-foreground">
                     {ing.name}

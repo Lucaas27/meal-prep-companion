@@ -50,7 +50,7 @@ export function RecipeListView({
             <TableHead className="text-right hidden md:table-cell">F</TableHead>
             <TableHead className="text-right">Portions</TableHead>
             <TableHead className="hidden lg:table-cell">Tags</TableHead>
-            <TableHead className="hidden xl:table-cell">Created</TableHead>
+            <TableHead className="hidden lg:table-cell">Created</TableHead>
             <TableHead className="w-[100px]" />
           </TableRow>
         </TableHeader>
@@ -123,13 +123,18 @@ export function RecipeListView({
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex flex-wrap gap-1">
-                    {recipe.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-[10px] font-medium">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {recipe.tags.length > 2 && (
-                      <span className="text-[10px] text-muted-foreground">+{recipe.tags.length - 2}</span>
+                    {recipe.tags.length > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="secondary" className="text-[10px] font-medium cursor-default">{recipe.tags[0]}</Badge>
+                        </TooltipTrigger>
+                        {recipe.tags.length > 1 && (
+                          <TooltipContent side="top" className="text-xs">{recipe.tags.join(', ')}</TooltipContent>
+                        )}
+                      </Tooltip>
+                    )}
+                    {recipe.tags.length > 1 && (
+                      <span className="text-[10px] text-muted-foreground">+{recipe.tags.length - 1}</span>
                     )}
                   </div>
                 </TableCell>
