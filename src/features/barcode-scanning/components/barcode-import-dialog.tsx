@@ -377,10 +377,10 @@ function BarcodeReview({
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
-        <div className="overflow-hidden rounded-xl border bg-muted/20">
+      <div className="grid gap-4 sm:grid-cols-[96px_1fr]">
+        <div className="overflow-hidden rounded-xl border bg-muted/20 max-w-24 sm:max-w-none">
           {details?.imageUrl ? (
-            <img src={details.imageUrl} alt={details.name || details.barcode} className="h-full w-full object-cover" />
+            <img src={details.imageUrl} alt={details.name || details.barcode} className="aspect-square h-full w-full object-cover" />
           ) : (
             <div className="flex aspect-square items-center justify-center text-xs text-muted-foreground">No image</div>
           )}
