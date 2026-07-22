@@ -147,6 +147,7 @@ function jsonResponse(body: unknown, status: number) {
 }
 
 Deno.serve(async (req: Request) => {
+  const startedAt = Date.now();
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
@@ -174,7 +175,13 @@ Deno.serve(async (req: Request) => {
     });
 
     if ('error' in result) {
-      console.info('barcode_lookup', { barcode: parsed.data.barcode, cacheOutcome: 'none', providerStatus: result.error });
+      console.info('barcode_lookup', {
+        barcode: parsed.data.barcode,
+        cacheOutcome: 'none',
+        providerStatus: result.error,
+        resultStatus: result.error,
+        durationMs: Date.now() - startedAt,
+      });
       return jsonResponse({ error: result.error, message: result.message }, result.status);
     }
 
@@ -184,15 +191,28 @@ Deno.serve(async (req: Request) => {
       cacheOutcome: result.cacheOutcome,
       providerStatus,
       completenessStatus: result.data.completenessStatus,
+      resultStatus: result.data.completenessStatus === 'complete' ? 'found' : 'incomplete',
+      durationMs: Date.now() - startedAt,
     });
 
     return jsonResponse(result.data, 200);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
+      console.info('barcode_lookup', {
+        barcode: 'unknown',
+        cacheOutcome: 'none',
+        providerStatus: 'timeout',
+        resultStatus: 'unavailable',
+        durationMs: Date.now() - startedAt,
+      });
       return jsonResponse({ error: 'unavailable', message: 'Open Food Facts request timed out.' }, 502);
     }
 
-    console.error('barcode_lookup_error', err instanceof Error ? err.message : err);
+    console.error('barcode_lookup_error', {
+      message: err instanceof Error ? err.message : String(err),
+      resultStatus: 'internal_error',
+      durationMs: Date.now() - startedAt,
+    });
     return jsonResponse({ error: 'unavailable', message: 'Internal error' }, 500);
   }
 });

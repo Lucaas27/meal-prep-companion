@@ -119,4 +119,28 @@ describe('BarcodeScanner', () => {
     await waitFor(() => expect(controls.stop).toHaveBeenCalled());
     expect(track.stop).toHaveBeenCalled();
   });
+
+  it('ignores repeated detections of the same barcode during the cooldown window', async () => {
+    const user = userEvent.setup();
+    const onDetected = vi.fn();
+    const { stream } = makeMediaStream();
+
+    let callbackRef: ((result: { getText: () => string } | undefined) => void) | undefined;
+
+    decodeFromVideoDevice.mockImplementation(async (_deviceId, preview, callback) => {
+      if (preview instanceof HTMLVideoElement) {
+        preview.srcObject = stream;
+      }
+      callbackRef = (result) => callback(result as never, undefined, { stop: vi.fn() });
+      return { stop: vi.fn() };
+    });
+
+    render(<BarcodeScanner onDetected={onDetected} onCancel={vi.fn()} />);
+
+    await user.click(screen.getAllByRole('button', { name: /start camera/i })[0]);
+    callbackRef?.({ getText: () => '036000291452' });
+    callbackRef?.({ getText: () => '036000291452' });
+
+    await waitFor(() => expect(onDetected).toHaveBeenCalledTimes(1));
+  });
 });

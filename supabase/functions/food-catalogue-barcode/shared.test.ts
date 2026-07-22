@@ -3,7 +3,6 @@ import {
   buildOpenFoodFactsUrl,
   mapOpenFoodFactsProduct,
   resolveBarcodeProduct,
-  toCachePayload,
   type BarcodeCacheRow,
 } from './shared';
 

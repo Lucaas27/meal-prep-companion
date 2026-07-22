@@ -27,6 +27,8 @@ interface BarcodeScannerProps {
 
 export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const startButtonRef = useRef<HTMLButtonElement | null>(null);
+  const manualInputRef = useRef<HTMLInputElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const detectedRef = useRef(false);
@@ -41,6 +43,7 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
 
   const inputId = useId();
   const canStartCamera = useMemo(() => !!(globalThis.isSecureContext && navigator.mediaDevices?.getUserMedia), []);
+  const previewVisible = status === 'starting' || status === 'scanning';
 
   const stopTracks = useCallback(() => {
     const stream = videoRef.current?.srcObject;
@@ -62,6 +65,7 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
     stopTracks();
   }, [stopTracks]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isOpen) {
       stopScanner();
@@ -72,6 +76,18 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
   }, [isOpen, stopScanner]);
 
   useEffect(() => () => stopScanner(), [stopScanner]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (manualMode) {
+      manualInputRef.current?.focus();
+      return;
+    }
+    if (!previewVisible) {
+      startButtonRef.current?.focus();
+    }
+  }, [isOpen, manualMode, previewVisible]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleDetected = useCallback((barcode: string) => {
     if (detectedRef.current) return;
@@ -130,8 +146,6 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
     onDetected(normalized);
   }, [manualBarcode, onDetected, stopScanner]);
 
-  const previewVisible = status === 'starting' || status === 'scanning';
-
   return (
     <div className="space-y-4">
       <div className="space-y-1">
@@ -159,7 +173,7 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute inset-0 bg-black/20" />
               <div className="absolute left-1/2 top-1/2 h-40 w-64 -translate-x-1/2 -translate-y-1/2 rounded-2xl border-2 border-primary/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]">
-                <div className="absolute inset-x-4 top-1/2 h-px -translate-y-1/2 bg-primary/80" />
+                <div className="absolute inset-x-4 top-1/2 h-px -translate-y-1/2 bg-primary/80 motion-safe:animate-pulse motion-reduce:animate-none" />
               </div>
             </div>
           )}
@@ -193,7 +207,7 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
 
         <div className="flex flex-wrap gap-2">
           {!previewVisible && !manualMode && (
-            <Button onClick={handleStart} disabled={!canStartCamera}>
+            <Button ref={startButtonRef} onClick={handleStart} disabled={!canStartCamera}>
               <Camera className="mr-1.5 h-4 w-4" />
               Start camera
             </Button>
@@ -221,6 +235,7 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
           <div className="space-y-1.5">
             <Label htmlFor={inputId}>Barcode</Label>
             <Input
+              ref={manualInputRef}
               id={inputId}
               value={manualBarcode}
               onChange={(event) => {

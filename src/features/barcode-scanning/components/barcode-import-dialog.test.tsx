@@ -232,4 +232,55 @@ describe('BarcodeImportDialog', () => {
     await user.click(screen.getByRole('button', { name: /add ingredient/i }));
     expect(onSaveIngredient).toHaveBeenCalled();
   });
+
+  it('shows a friendly provider rate limit message', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useFoodByBarcode).mockReturnValue({
+      data: null,
+      lookupState: 'rate_limited',
+      isPending: false,
+      error: new Error('Rate limited'),
+    } as never);
+
+    render(
+      <BarcodeImportDialog
+        open
+        onOpenChange={vi.fn()}
+        ingredients={[]}
+        onImport={vi.fn()}
+        onOpenIngredient={vi.fn()}
+        onSaveIngredient={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /mock detect/i }));
+    expect(await screen.findByText(/open food facts is rate limited right now/i)).not.toBeNull();
+  });
+
+  it('shows a cooldown message when the same barcode is scanned again too quickly', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useFoodByBarcode).mockReturnValue({
+      data: barcodeDetails,
+      lookupState: 'found',
+      isPending: false,
+      error: null,
+    } as never);
+
+    render(
+      <BarcodeImportDialog
+        open
+        onOpenChange={vi.fn()}
+        ingredients={[]}
+        onImport={vi.fn()}
+        onOpenIngredient={vi.fn()}
+        onSaveIngredient={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /mock detect/i }));
+    await user.click(screen.getByRole('button', { name: /scan again/i }));
+    await user.click(screen.getByRole('button', { name: /mock detect/i }));
+
+    expect(screen.getByText(/that barcode was just scanned/i)).not.toBeNull();
+  });
 });

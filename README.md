@@ -96,6 +96,15 @@ Imported foods are saved as user-owned editable copies in this app and do not st
 Barcode product lookup data comes from Open Food Facts.
 Open Food Facts entries may be incomplete or community-contributed, so barcode results must be reviewed before import.
 
+Open Food Facts data and product images are subject to Open Food Facts licensing terms. If you ship this feature publicly, keep visible attribution in the product review flow and review the current Open Food Facts data and image licence obligations before production release.
+
+### Production Camera Notes
+
+- Barcode scanning requires HTTPS in production.
+- Camera access must be tested on real mobile browsers, especially iOS Safari and Android Chrome.
+- Test permission denied, no-camera, and camera-in-use cases on real devices before release.
+- Verify rear/environment camera selection on phones and tablets.
+
 ## Known Limitations
 
 - Only USDA FoodData Central import is supported in v1.3.

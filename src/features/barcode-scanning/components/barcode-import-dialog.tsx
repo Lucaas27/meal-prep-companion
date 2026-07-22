@@ -26,6 +26,7 @@ interface Props {
 }
 
 type FlowStep = 'scan' | 'lookup' | 'review' | 'manual' | 'error';
+const BARCODE_LOOKUP_COOLDOWN_MS = 3000;
 
 function buildConversion(details: ExternalBarcodeFoodDetails, amount: string, unit: string) {
   const parsedAmount = Number(amount);
@@ -50,6 +51,9 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
   const [scannedBarcode, setScannedBarcode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [cooldownMessage, setCooldownMessage] = useState<string | null>(null);
+  const [lastScannedBarcode, setLastScannedBarcode] = useState<string | null>(null);
+  const [lastScannedAt, setLastScannedAt] = useState(0);
 
   const { data: details, lookupState, isPending, error } = useFoodByBarcode(scannedBarcode);
 
@@ -58,12 +62,16 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
     return ingredients.find((ingredient) => ingredient.source === 'open-food-facts' && ingredient.externalSourceId === details.barcode) ?? null;
   }, [details, ingredients]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) {
       setStep('scan');
       setScannedBarcode('');
       setSubmitting(false);
       setStatusMessage(null);
+      setCooldownMessage(null);
+      setLastScannedBarcode(null);
+      setLastScannedAt(0);
     }
   }, [open]);
 
@@ -86,10 +94,12 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
       setStep('error');
     }
   }, [lookupState, scannedBarcode]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleScanAgain = () => {
     setScannedBarcode('');
     setStatusMessage(null);
+    setCooldownMessage(null);
     setStep('scan');
   };
 
@@ -109,14 +119,29 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
         </DialogHeader>
 
         {step === 'scan' && (
-          <BarcodeScanner
-            isOpen={open && step === 'scan'}
-            onDetected={(barcode) => {
-              setScannedBarcode(barcode);
-              setStep('lookup');
-            }}
-            onCancel={() => onOpenChange(false)}
-          />
+          <div className="space-y-3">
+            {cooldownMessage && (
+              <div className="rounded-lg border border-muted-foreground/30 bg-muted/20 p-3 text-sm text-foreground" aria-live="polite">
+                {cooldownMessage}
+              </div>
+            )}
+            <BarcodeScanner
+              isOpen={open && step === 'scan'}
+              onDetected={(barcode) => {
+                const now = Date.now();
+                if (lastScannedBarcode === barcode && now - lastScannedAt < BARCODE_LOOKUP_COOLDOWN_MS) {
+                  setCooldownMessage('That barcode was just scanned. Please wait a moment or scan a different product.');
+                  return;
+                }
+                setCooldownMessage(null);
+                setLastScannedBarcode(barcode);
+                setLastScannedAt(now);
+                setScannedBarcode(barcode);
+                setStep('lookup');
+              }}
+              onCancel={() => onOpenChange(false)}
+            />
+          </div>
         )}
 
         {step === 'lookup' && (
@@ -209,7 +234,15 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <p className="font-medium">Lookup failed</p>
-                <p>{error instanceof Error ? error.message : lookupState === 'not_found' ? 'No product was found for that barcode.' : 'The barcode lookup is unavailable right now.'}</p>
+                <p>
+                  {lookupState === 'rate_limited'
+                    ? 'Open Food Facts is rate limited right now. Please wait and try again.'
+                    : lookupState === 'unavailable'
+                      ? 'The product lookup service is temporarily unavailable. You can try again or enter it manually.'
+                      : error instanceof Error
+                        ? error.message
+                        : 'The barcode lookup is unavailable right now.'}
+                </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -263,6 +296,7 @@ function BarcodeReview({
   const [mealUnit, setMealUnit] = useState<'item' | typeof INGREDIENT_UNITS[number]>('item');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setName(details?.name ?? '');
     setBrand(details?.brand ?? '');
@@ -276,6 +310,7 @@ function BarcodeReview({
     setCategory(details?.category ?? '');
     setFieldErrors({});
   }, [details]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const incomplete = details ? details.completenessStatus !== 'complete' : true;
   const editedByUser = !!details && (
@@ -394,7 +429,7 @@ function BarcodeReview({
 
       {incomplete && !notFound && (
         <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 text-sm text-yellow-800 dark:text-yellow-300">
-          This product has incomplete community-contributed data. Review the nutrition before adding it.
+          This product has incomplete community-contributed data. Review and complete any missing nutrition values before adding it.
         </div>
       )}
 
@@ -437,6 +472,10 @@ function BarcodeReview({
             ? `${formatNutrient(details.servingQuantityGrams)}g will be saved for ${mealAmount || '0'} ${UNIT_META[mealUnit].abbr}.`
             : 'Serving weight is unavailable, so no meal-use conversion will be saved.'}
         </p>
+      </div>
+
+      <div className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+        Product data and images are provided by Open Food Facts under their community data and image licences. Review imported values before saving.
       </div>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
