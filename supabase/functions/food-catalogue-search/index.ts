@@ -1,4 +1,3 @@
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { z } from 'npm:zod';
 
 const USDA_BASE = 'https://api.nal.usda.gov/fdc/v1';

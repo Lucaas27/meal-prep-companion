@@ -1,4 +1,3 @@
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { z } from 'npm:zod';
 
 const USDA_BASE = 'https://api.nal.usda.gov/fdc/v1';
@@ -127,7 +126,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log("checkpoint: start");
     const body = await req.json();
+    console.log("checkpoint: parsed body");
     const parsed = detailsRequestSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -137,6 +138,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log("checkpoint: validated input");
     const { externalId } = parsed.data;
     const apiKey = Deno.env.get('USDA_API_KEY');
 
@@ -148,7 +150,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const url = `${USDA_BASE}/food/${encodeURIComponent(externalId)}?api_key=${apiKey}`;
-
+    console.log("checkpoint: calling USDA");
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -158,6 +160,8 @@ Deno.serve(async (req: Request) => {
     } finally {
       clearTimeout(timeout);
     }
+
+    console.log("checkpoint: USDA responded", usdaRes.status);
 
     if (usdaRes.status === 401 || usdaRes.status === 403) {
       return new Response(
@@ -188,27 +192,31 @@ Deno.serve(async (req: Request) => {
     }
 
     const raw = await usdaRes.json();
+    console.log("checkpoint: parsed USDA JSON length", Object.keys(raw).length);
     const parsedResponse = usdaFoodDetailSchema.safeParse(raw);
     if (!parsedResponse.success) {
+      console.error("checkpoint: schema validation failed", parsedResponse.error.issues);
       return new Response(
         JSON.stringify({ error: 'invalid_response', message: 'Invalid USDA food data' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
+    console.log("checkpoint: mapping result");
     const result = mapDetails(parsedResponse.data);
 
+    console.log("checkpoint: returning");
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
+    console.error('checkpoint: caught error', err instanceof Error ? err.message : err, err instanceof Error ? err.stack : '');
     if (err instanceof DOMException && err.name === 'AbortError') {
       return new Response(
         JSON.stringify({ error: 'unavailable', message: 'USDA API request timed out' }),
         { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
-    console.error('USDA details error:', err instanceof Error ? err.message : err);
     return new Response(
       JSON.stringify({ error: 'unavailable', message: 'Internal error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
