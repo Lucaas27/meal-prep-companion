@@ -35,14 +35,14 @@ import {
 } from 'lucide-react';
 
 const DEFAULTS: DryCookedInputs = {
-  dryWeight: 200,
-  dryCaloriesPer100g: 355,
-  dryProteinPer100g: 8,
-  dryCarbsPer100g: 77,
-  dryFatPer100g: 1,
+  dryWeight: 0,
+  dryCaloriesPer100g: 0,
+  dryProteinPer100g: 0,
+  dryCarbsPer100g: 0,
+  dryFatPer100g: 0,
   nutritionBasis: 100,
-  cookedWeight: 460,
-  portions: 4,
+  cookedWeight: 0,
+  portions: 0,
 };
 
 export default function DryCookedCalculator() {
@@ -80,11 +80,15 @@ export default function DryCookedCalculator() {
       ? calcServingNutrition(totals, dryServing, inputs.dryWeight)
       : null;
 
+  const hasInputs = inputs.dryWeight > 0 || inputs.cookedWeight > 0 || inputs.dryCaloriesPer100g > 0 || inputs.dryProteinPer100g > 0 || inputs.dryCarbsPer100g > 0 || inputs.dryFatPer100g > 0;
+
   const warnings: string[] = [];
-  if (yieldRatio > 5) warnings.push('Cooked weight is more than 5× the dry weight. Verify your measurements.');
-  if (yieldRatio > 0 && yieldRatio < 0.2) warnings.push('Cooked weight is less than 20% of the raw weight. Verify your measurements.');
-  if (inputs.dryCaloriesPer100g === 0 && inputs.dryProteinPer100g === 0 && inputs.dryCarbsPer100g === 0 && inputs.dryFatPer100g === 0) {
-    warnings.push('All nutrition values are zero. Check that this is intentional.');
+  if (hasInputs) {
+    if (yieldRatio > 5) warnings.push('Cooked weight is more than 5× the dry weight. Verify your measurements.');
+    if (yieldRatio > 0 && yieldRatio < 0.2) warnings.push('Cooked weight is less than 20% of the raw weight. Verify your measurements.');
+    if (totals.totalCalories === 0 && totals.totalProtein === 0 && totals.totalCarbs === 0 && totals.totalFat === 0 && (inputs.dryCaloriesPer100g > 0 || inputs.dryProteinPer100g > 0 || inputs.dryCarbsPer100g > 0 || inputs.dryFatPer100g > 0)) {
+      warnings.push('All nutrition values are zero. Check that this is intentional.');
+    }
   }
 
   const canSave = saveName.trim().length > 0 && inputs.dryWeight > 0 && inputs.cookedWeight > 0;
@@ -165,14 +169,18 @@ export default function DryCookedCalculator() {
           <CardDescription>Enter dry food values and final cooked weight.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="dc-dry-weight" className="text-[13px]">Dry weight (g)</Label>
-              <Input id="dc-dry-weight" type="number" value={inputs.dryWeight || ''} onChange={(e) => handleChange('dryWeight', e.target.value)} min="0" step="1" />
+              <Input id="dc-dry-weight" type="number" value={inputs.dryWeight || ''} onChange={(e) => handleChange('dryWeight', e.target.value)} min="0" step="1" placeholder="e.g. 200" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="dc-cooked" className="text-[13px]">Cooked weight (g)</Label>
-              <Input id="dc-cooked" type="number" value={inputs.cookedWeight || ''} onChange={(e) => handleChange('cookedWeight', e.target.value)} min="0" step="1" />
+              <Input id="dc-cooked" type="number" value={inputs.cookedWeight || ''} onChange={(e) => handleChange('cookedWeight', e.target.value)} min="0" step="1" placeholder="e.g. 460" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="dc-portions" className="text-[13px]">Portions</Label>
+              <Input id="dc-portions" type="number" value={inputs.portions || ''} onChange={(e) => handleChange('portions', e.target.value)} min="1" step="1" placeholder="e.g. 4" />
             </div>
           </div>
 
@@ -197,34 +205,23 @@ export default function DryCookedCalculator() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="dc-dry-cal" className="text-[13px]">Calories</Label>
-              <Input id="dc-dry-cal" type="number" value={inputs.dryCaloriesPer100g || ''} onChange={(e) => handleChange('dryCaloriesPer100g', e.target.value)} min="0" step="0.1" />
+              <Input id="dc-dry-cal" type="number" value={inputs.dryCaloriesPer100g || ''} onChange={(e) => handleChange('dryCaloriesPer100g', e.target.value)} min="0" step="0.1" placeholder="e.g. 355" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="dc-dry-prot" className="text-[13px]">Protein (g)</Label>
-              <Input id="dc-dry-prot" type="number" value={inputs.dryProteinPer100g || ''} onChange={(e) => handleChange('dryProteinPer100g', e.target.value)} min="0" step="0.1" />
+              <Input id="dc-dry-prot" type="number" value={inputs.dryProteinPer100g || ''} onChange={(e) => handleChange('dryProteinPer100g', e.target.value)} min="0" step="0.1" placeholder="e.g. 8" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="dc-dry-carbs" className="text-[13px]">Carbs (g)</Label>
-              <Input id="dc-dry-carbs" type="number" value={inputs.dryCarbsPer100g || ''} onChange={(e) => handleChange('dryCarbsPer100g', e.target.value)} min="0" step="0.1" />
+              <Input id="dc-dry-carbs" type="number" value={inputs.dryCarbsPer100g || ''} onChange={(e) => handleChange('dryCarbsPer100g', e.target.value)} min="0" step="0.1" placeholder="e.g. 77" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="dc-dry-fat" className="text-[13px]">Fat (g)</Label>
-              <Input id="dc-dry-fat" type="number" value={inputs.dryFatPer100g || ''} onChange={(e) => handleChange('dryFatPer100g', e.target.value)} min="0" step="0.1" />
+              <Input id="dc-dry-fat" type="number" value={inputs.dryFatPer100g || ''} onChange={(e) => handleChange('dryFatPer100g', e.target.value)} min="0" step="0.1" placeholder="e.g. 1" />
             </div>
           </div>
 
           <Separator />
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="dc-portions" className="text-[13px]">Portions</Label>
-              <Input id="dc-portions" type="number" value={inputs.portions || ''} onChange={(e) => handleChange('portions', e.target.value)} min="1" step="1" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dc-dry-serving" className="text-[13px]">Dry serving (g)</Label>
-              <Input id="dc-dry-serving" type="number" value={dryServing || ''} onChange={(e) => setDryServing(Number(e.target.value))} min="0" step="1" placeholder="Optional" />
-            </div>
-          </div>
 
           <div className="flex items-center gap-2">
             <Button onClick={handleReset} variant="outline" size="sm">
