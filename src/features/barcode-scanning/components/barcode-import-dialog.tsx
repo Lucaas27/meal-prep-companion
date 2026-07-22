@@ -14,6 +14,7 @@ import type { ImportExternalIngredientInput, ImportExternalIngredientResult } fr
 import type { ExternalBarcodeFoodDetails } from '@/features/external-catalogue/types';
 import { formatNutrient } from '@/shared/utils/format';
 import { cn } from '@/shared/lib/utils';
+import { makeId } from '@/shared/lib/ids';
 
 interface Props {
   open: boolean;
@@ -21,10 +22,10 @@ interface Props {
   ingredients: StoredIngredient[];
   onImport: (input: ImportExternalIngredientInput) => Promise<ImportExternalIngredientResult>;
   onOpenIngredient: (ingredient: StoredIngredient) => void;
-  onOpenManual: (draft: StoredIngredient | null) => void;
+  onSaveIngredient: (ingredient: StoredIngredient) => void;
 }
 
-type FlowStep = 'scan' | 'lookup' | 'review' | 'error';
+type FlowStep = 'scan' | 'lookup' | 'review' | 'manual' | 'error';
 
 function buildConversion(details: ExternalBarcodeFoodDetails, amount: string, unit: string) {
   const parsedAmount = Number(amount);
@@ -44,7 +45,7 @@ function buildConversion(details: ExternalBarcodeFoodDetails, amount: string, un
   }];
 }
 
-export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport, onOpenIngredient, onOpenManual }: Props) {
+export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport, onOpenIngredient, onSaveIngredient }: Props) {
   const [step, setStep] = useState<FlowStep>('scan');
   const [scannedBarcode, setScannedBarcode] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -77,7 +78,11 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
       setStep('review');
       return;
     }
-    if (lookupState === 'not_found' || lookupState === 'rate_limited' || lookupState === 'unavailable') {
+    if (lookupState === 'not_found') {
+      setStep('manual');
+      return;
+    }
+    if (lookupState === 'rate_limited' || lookupState === 'unavailable') {
       setStep('error');
     }
   }, [lookupState, scannedBarcode]);
@@ -89,26 +94,8 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
   };
 
   const handleManual = () => {
-    if (details) {
-      onOpenManual({
-        id: `manual-${Date.now()}`,
-        name: details.name || '',
-        caloriesPer100g: details.caloriesPer100g ?? 0,
-        proteinPer100g: details.proteinPer100g ?? 0,
-        carbsPer100g: details.carbohydratesPer100g ?? 0,
-        fatPer100g: details.fatPer100g ?? 0,
-        category: details.category ?? '',
-        source: 'open-food-facts',
-        externalSourceId: details.barcode,
-        externalSourceName: details.name || null,
-        importedAt: Date.now(),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-    } else {
-      onOpenManual(null);
-    }
-    onOpenChange(false);
+    setStatusMessage(null);
+    setStep('manual');
   };
 
   return (
@@ -168,6 +155,49 @@ export function BarcodeImportDialog({ open, onOpenChange, ingredients, onImport,
             }}
             onOpenIngredient={onOpenIngredient}
             onScanAgain={handleScanAgain}
+            manualMode={false}
+            notFound={false}
+            onEnterManually={handleManual}
+            onCancel={() => onOpenChange(false)}
+          />
+        )}
+
+        {step === 'manual' && (
+          <BarcodeReview
+            details={details ?? null}
+            importedIngredient={importedIngredient}
+            submitting={submitting || isPending}
+            statusMessage={lookupState === 'not_found' ? `We couldn't find this product. You can add it manually.` : statusMessage}
+            onAdd={async (input) => {
+              setSubmitting(true);
+              setStatusMessage(null);
+              try {
+                const ingredient: StoredIngredient = {
+                  id: makeId(),
+                  name: input.name,
+                  caloriesPer100g: input.caloriesPer100g,
+                  proteinPer100g: input.proteinPer100g,
+                  carbsPer100g: input.carbsPer100g,
+                  fatPer100g: input.fatPer100g,
+                  category: input.category,
+                  source: 'open-food-facts',
+                  externalSourceId: input.externalId,
+                  externalSourceName: input.externalSourceName,
+                  importedAt: Date.now(),
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                };
+                onSaveIngredient(ingredient);
+                onOpenChange(false);
+                return { status: 'created', ingredient, conversions: [] } as const;
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+            onOpenIngredient={onOpenIngredient}
+            onScanAgain={handleScanAgain}
+            manualMode
+            notFound={lookupState === 'not_found'}
             onEnterManually={handleManual}
             onCancel={() => onOpenChange(false)}
           />
@@ -202,51 +232,100 @@ function BarcodeReview({
   onAdd,
   onOpenIngredient,
   onScanAgain,
+  manualMode,
+  notFound,
   onEnterManually,
   onCancel,
 }: {
-  details: ExternalBarcodeFoodDetails;
+  details: ExternalBarcodeFoodDetails | null;
   importedIngredient: StoredIngredient | null;
   submitting: boolean;
   statusMessage: string | null;
   onAdd: (input: ImportExternalIngredientInput) => Promise<ImportExternalIngredientResult>;
   onOpenIngredient: (ingredient: StoredIngredient) => void;
   onScanAgain: () => void;
+  manualMode: boolean;
+  notFound: boolean;
   onEnterManually: () => void;
   onCancel: () => void;
 }) {
-  const [name, setName] = useState(details.name);
-  const [caloriesPer100g, setCaloriesPer100g] = useState(String(details.caloriesPer100g ?? 0));
-  const [proteinPer100g, setProteinPer100g] = useState(String(details.proteinPer100g ?? 0));
-  const [carbsPer100g, setCarbsPer100g] = useState(String(details.carbohydratesPer100g ?? 0));
-  const [fatPer100g, setFatPer100g] = useState(String(details.fatPer100g ?? 0));
-  const [category, setCategory] = useState(details.category ?? '');
+  const [name, setName] = useState(details?.name ?? '');
+  const [brand, setBrand] = useState(details?.brand ?? '');
+  const [packageQuantityText, setPackageQuantityText] = useState(details?.packageQuantityText ?? '');
+  const [servingSizeText, setServingSizeText] = useState(details?.servingSizeText ?? '');
+  const [caloriesPer100g, setCaloriesPer100g] = useState(details?.caloriesPer100g != null ? String(details.caloriesPer100g) : '');
+  const [proteinPer100g, setProteinPer100g] = useState(details?.proteinPer100g != null ? String(details.proteinPer100g) : '');
+  const [carbsPer100g, setCarbsPer100g] = useState(details?.carbohydratesPer100g != null ? String(details.carbohydratesPer100g) : '');
+  const [fatPer100g, setFatPer100g] = useState(details?.fatPer100g != null ? String(details.fatPer100g) : '');
+  const [fibrePer100g, setFibrePer100g] = useState(details?.fibrePer100g != null ? String(details.fibrePer100g) : '');
+  const [category, setCategory] = useState(details?.category ?? '');
   const [mealAmount, setMealAmount] = useState('1');
   const [mealUnit, setMealUnit] = useState<'item' | typeof INGREDIENT_UNITS[number]>('item');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    setName(details.name);
-    setCaloriesPer100g(String(details.caloriesPer100g ?? 0));
-    setProteinPer100g(String(details.proteinPer100g ?? 0));
-    setCarbsPer100g(String(details.carbohydratesPer100g ?? 0));
-    setFatPer100g(String(details.fatPer100g ?? 0));
-    setCategory(details.category ?? '');
+    setName(details?.name ?? '');
+    setBrand(details?.brand ?? '');
+    setPackageQuantityText(details?.packageQuantityText ?? '');
+    setServingSizeText(details?.servingSizeText ?? '');
+    setCaloriesPer100g(details?.caloriesPer100g != null ? String(details.caloriesPer100g) : '');
+    setProteinPer100g(details?.proteinPer100g != null ? String(details.proteinPer100g) : '');
+    setCarbsPer100g(details?.carbohydratesPer100g != null ? String(details.carbohydratesPer100g) : '');
+    setFatPer100g(details?.fatPer100g != null ? String(details.fatPer100g) : '');
+    setFibrePer100g(details?.fibrePer100g != null ? String(details.fibrePer100g) : '');
+    setCategory(details?.category ?? '');
+    setFieldErrors({});
   }, [details]);
 
-  const incomplete = details.completenessStatus !== 'complete';
+  const incomplete = details ? details.completenessStatus !== 'complete' : true;
+  const editedByUser = !!details && (
+    name !== details.name ||
+    caloriesPer100g !== (details.caloriesPer100g != null ? String(details.caloriesPer100g) : '') ||
+    proteinPer100g !== (details.proteinPer100g != null ? String(details.proteinPer100g) : '') ||
+    carbsPer100g !== (details.carbohydratesPer100g != null ? String(details.carbohydratesPer100g) : '') ||
+    fatPer100g !== (details.fatPer100g != null ? String(details.fatPer100g) : '') ||
+    fibrePer100g !== (details.fibrePer100g != null ? String(details.fibrePer100g) : '')
+  );
+
+  const validateNumberField = (value: string, label: string, required = true) => {
+    if (!value.trim()) {
+      return required ? `${label} is required.` : null;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return `${label} must be zero or greater.`;
+    }
+    return null;
+  };
 
   const handleAdd = async () => {
+    const nextErrors: Record<string, string> = {};
+    if (!name.trim()) nextErrors.name = 'Product name is required.';
+    const caloriesError = validateNumberField(caloriesPer100g, 'Calories');
+    if (caloriesError) nextErrors.caloriesPer100g = caloriesError;
+    const proteinError = validateNumberField(proteinPer100g, 'Protein');
+    if (proteinError) nextErrors.proteinPer100g = proteinError;
+    const carbsError = validateNumberField(carbsPer100g, 'Carbohydrates');
+    if (carbsError) nextErrors.carbsPer100g = carbsError;
+    const fatError = validateNumberField(fatPer100g, 'Fat');
+    if (fatError) nextErrors.fatPer100g = fatError;
+    const fibreError = validateNumberField(fibrePer100g, 'Fibre', false);
+    if (fibreError) nextErrors.fibrePer100g = fibreError;
+
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     await onAdd({
       name: name.trim(),
-      caloriesPer100g: Number(caloriesPer100g) || 0,
-      proteinPer100g: Number(proteinPer100g) || 0,
-      carbsPer100g: Number(carbsPer100g) || 0,
-      fatPer100g: Number(fatPer100g) || 0,
+      caloriesPer100g: Number(caloriesPer100g),
+      proteinPer100g: Number(proteinPer100g),
+      carbsPer100g: Number(carbsPer100g),
+      fatPer100g: Number(fatPer100g),
       category,
       provider: 'open-food-facts',
-      externalId: details.barcode,
-      externalSourceName: details.name || details.brand || details.barcode,
-      approvedConversions: buildConversion(details, mealAmount, mealUnit),
+      externalId: details?.barcode ?? '',
+      externalSourceName: name.trim() || brand.trim() || details?.barcode || '',
+      approvedConversions: details ? buildConversion(details, mealAmount, mealUnit) : [],
     });
   };
 
@@ -265,7 +344,7 @@ function BarcodeReview({
 
       <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
         <div className="overflow-hidden rounded-xl border bg-muted/20">
-          {details.imageUrl ? (
+          {details?.imageUrl ? (
             <img src={details.imageUrl} alt={details.name || details.barcode} className="h-full w-full object-cover" />
           ) : (
             <div className="flex aspect-square items-center justify-center text-xs text-muted-foreground">No image</div>
@@ -275,27 +354,29 @@ function BarcodeReview({
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">Open Food Facts</Badge>
-            <Badge variant="outline">{details.barcode}</Badge>
+            <Badge variant="outline">{details?.barcode ?? 'Scanned barcode'}</Badge>
             {incomplete && <Badge variant="outline" className="border-yellow-500/40 text-yellow-700 dark:text-yellow-400">Incomplete data</Badge>}
+            {editedByUser && <Badge variant="outline" className="border-primary/30 text-primary">User-adjusted</Badge>}
           </div>
 
           <div className="space-y-1.5">
             <Label>Name</Label>
             <Input value={name} onChange={(event) => setName(event.target.value)} />
+            {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <span className="block text-muted-foreground">Brand</span>
-              <span className="font-medium">{details.brand || '—'}</span>
+              {manualMode ? <Input value={brand} onChange={(event) => setBrand(event.target.value)} className="mt-1 h-8 text-sm" /> : <span className="font-medium">{brand || '—'}</span>}
             </div>
             <div>
               <span className="block text-muted-foreground">Package</span>
-              <span className="font-medium">{details.packageQuantityText || '—'}</span>
+              {manualMode ? <Input value={packageQuantityText} onChange={(event) => setPackageQuantityText(event.target.value)} className="mt-1 h-8 text-sm" /> : <span className="font-medium">{packageQuantityText || '—'}</span>}
             </div>
             <div>
               <span className="block text-muted-foreground">Serving size</span>
-              <span className="font-medium">{details.servingSizeText || '—'}</span>
+              {manualMode ? <Input value={servingSizeText} onChange={(event) => setServingSizeText(event.target.value)} className="mt-1 h-8 text-sm" /> : <span className="font-medium">{servingSizeText || '—'}</span>}
             </div>
             <div>
               <span className="block text-muted-foreground">Source</span>
@@ -305,7 +386,13 @@ function BarcodeReview({
         </div>
       </div>
 
-      {incomplete && (
+      {notFound && (
+        <div className="rounded-lg border border-muted-foreground/30 bg-muted/20 p-3 text-sm text-foreground">
+          We couldn't find this product. You can add it manually.
+        </div>
+      )}
+
+      {incomplete && !notFound && (
         <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 text-sm text-yellow-800 dark:text-yellow-300">
           This product has incomplete community-contributed data. Review the nutrition before adding it.
         </div>
@@ -313,11 +400,13 @@ function BarcodeReview({
 
       <div className="space-y-2">
         <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Nutrition (per 100g)</Label>
+        <p className="text-xs text-muted-foreground">Enter nutrition values per 100g, not per serving.</p>
         <div className="grid grid-cols-2 gap-2">
-          <ReviewNutritionInput label="Calories" value={caloriesPer100g} onChange={setCaloriesPer100g} unit="kcal" />
-          <ReviewNutritionInput label="Protein" value={proteinPer100g} onChange={setProteinPer100g} unit="g" />
-          <ReviewNutritionInput label="Carbs" value={carbsPer100g} onChange={setCarbsPer100g} unit="g" />
-          <ReviewNutritionInput label="Fat" value={fatPer100g} onChange={setFatPer100g} unit="g" />
+          <ReviewNutritionInput label="Calories" value={caloriesPer100g} onChange={setCaloriesPer100g} unit="kcal" error={fieldErrors.caloriesPer100g} missing={incomplete && !caloriesPer100g.trim()} />
+          <ReviewNutritionInput label="Protein" value={proteinPer100g} onChange={setProteinPer100g} unit="g" error={fieldErrors.proteinPer100g} missing={incomplete && !proteinPer100g.trim()} />
+          <ReviewNutritionInput label="Carbohydrates" value={carbsPer100g} onChange={setCarbsPer100g} unit="g" error={fieldErrors.carbsPer100g} missing={incomplete && !carbsPer100g.trim()} />
+          <ReviewNutritionInput label="Fat" value={fatPer100g} onChange={setFatPer100g} unit="g" error={fieldErrors.fatPer100g} missing={incomplete && !fatPer100g.trim()} />
+          <ReviewNutritionInput label="Fibre (optional)" value={fibrePer100g} onChange={setFibrePer100g} unit="g" error={fieldErrors.fibrePer100g} missing={false} />
         </div>
       </div>
 
@@ -344,7 +433,7 @@ function BarcodeReview({
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          {details.servingQuantityGrams != null
+          {details?.servingQuantityGrams != null
             ? `${formatNutrient(details.servingQuantityGrams)}g will be saved for ${mealAmount || '0'} ${UNIT_META[mealUnit].abbr}.`
             : 'Serving weight is unavailable, so no meal-use conversion will be saved.'}
         </p>
@@ -352,7 +441,7 @@ function BarcodeReview({
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-        <Button variant="outline" onClick={onEnterManually}>Enter manually</Button>
+        {!manualMode && <Button variant="outline" onClick={onEnterManually}>Enter manually</Button>}
         <Button variant="outline" onClick={onScanAgain}><RotateCcw className="mr-1.5 h-4 w-4" />Scan again</Button>
         {importedIngredient ? (
           <Button onClick={() => onOpenIngredient(importedIngredient)}>Open existing</Button>
@@ -368,12 +457,13 @@ function BarcodeReview({
   );
 }
 
-function ReviewNutritionInput({ label, value, onChange, unit }: { label: string; value: string; onChange: (value: string) => void; unit: string }) {
+function ReviewNutritionInput({ label, value, onChange, unit, error, missing }: { label: string; value: string; onChange: (value: string) => void; unit: string; error?: string; missing?: boolean }) {
   return (
-    <div className="rounded-md bg-muted/50 p-2">
+    <div className={cn('rounded-md bg-muted/50 p-2', missing && 'ring-1 ring-yellow-500/50')}>
       <Label className="mb-1 block text-[10px] text-muted-foreground">{label} / 100g</Label>
       <Input type="number" min="0" step="0.1" value={value} onChange={(event) => onChange(event.target.value)} className="h-8 text-sm" />
       <span className="mt-1 block text-[10px] text-muted-foreground">{unit}</span>
+      {error && <p className="mt-1 text-[10px] text-destructive">{error}</p>}
     </div>
   );
 }

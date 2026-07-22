@@ -137,12 +137,6 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
     setFormOpen(true);
   };
 
-  const handleOpenManualFromBarcode = (draft: StoredIngredient | null) => {
-    setBarcodeOpen(false);
-    setEditingIngredient(draft);
-    setFormOpen(true);
-  };
-
   const handleSave = (ingredient: StoredIngredient) => {
     onSave(ingredient);
   };
@@ -354,7 +348,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
         ingredients={ingredients}
         onImport={handleImport}
         onOpenIngredient={handleOpenIngredient}
-        onOpenManual={handleOpenManualFromBarcode}
+        onSaveIngredient={handleSave}
       />
       {dialog}
     </div>

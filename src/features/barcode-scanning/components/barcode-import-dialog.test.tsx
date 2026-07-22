@@ -76,7 +76,7 @@ describe('BarcodeImportDialog', () => {
         ingredients={[]}
         onImport={onImport}
         onOpenIngredient={vi.fn()}
-        onOpenManual={vi.fn()}
+        onSaveIngredient={vi.fn()}
       />,
     );
 
@@ -102,7 +102,7 @@ describe('BarcodeImportDialog', () => {
         ingredients={[]}
         onImport={vi.fn()}
         onOpenIngredient={vi.fn()}
-        onOpenManual={vi.fn()}
+        onSaveIngredient={vi.fn()}
       />,
     );
 
@@ -126,7 +126,7 @@ describe('BarcodeImportDialog', () => {
         ingredients={[]}
         onImport={vi.fn()}
         onOpenIngredient={vi.fn()}
-        onOpenManual={vi.fn()}
+        onSaveIngredient={vi.fn()}
       />,
     );
 
@@ -150,7 +150,7 @@ describe('BarcodeImportDialog', () => {
         ingredients={[]}
         onImport={vi.fn()}
         onOpenIngredient={vi.fn()}
-        onOpenManual={vi.fn()}
+        onSaveIngredient={vi.fn()}
       />,
     );
 
@@ -190,7 +190,7 @@ describe('BarcodeImportDialog', () => {
         }]}
         onImport={vi.fn()}
         onOpenIngredient={onOpenIngredient}
-        onOpenManual={vi.fn()}
+        onSaveIngredient={vi.fn()}
       />,
     );
 
@@ -201,12 +201,12 @@ describe('BarcodeImportDialog', () => {
 
   it('shows lookup failure actions', async () => {
     const user = userEvent.setup();
-    const onOpenManual = vi.fn();
+    const onSaveIngredient = vi.fn();
     vi.mocked(useFoodByBarcode).mockReturnValue({
       data: null,
-      lookupState: 'unavailable',
+      lookupState: 'not_found',
       isPending: false,
-      error: new Error('Lookup failed'),
+      error: new Error('Barcode product not found.'),
     } as never);
 
     render(
@@ -216,13 +216,20 @@ describe('BarcodeImportDialog', () => {
         ingredients={[]}
         onImport={vi.fn()}
         onOpenIngredient={vi.fn()}
-        onOpenManual={onOpenManual}
+        onSaveIngredient={onSaveIngredient}
       />,
     );
 
     await user.click(screen.getByRole('button', { name: /mock detect/i }));
-    expect((await screen.findAllByText(/lookup failed/i)).length).toBeGreaterThan(0);
-    await user.click(screen.getByRole('button', { name: /^enter manually$/i }));
-    expect(onOpenManual).toHaveBeenCalled();
+    expect((await screen.findAllByText(/we couldn't find this product\. you can add it manually\./i)).length).toBeGreaterThan(0);
+    const textboxes = screen.getAllByRole('textbox');
+    const spinbuttons = screen.getAllByRole('spinbutton');
+    await user.type(textboxes[0], 'Manual Product');
+    await user.type(spinbuttons[0], '120');
+    await user.type(spinbuttons[1], '8');
+    await user.type(spinbuttons[2], '15');
+    await user.type(spinbuttons[3], '4');
+    await user.click(screen.getByRole('button', { name: /add ingredient/i }));
+    expect(onSaveIngredient).toHaveBeenCalled();
   });
 });
