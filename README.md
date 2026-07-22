@@ -86,6 +86,13 @@ The details function also requires an authenticated user and returns provider-ne
 
 The barcode function requires an authenticated user, checks the local barcode cache first, and falls back to Open Food Facts product-by-barcode lookup.
 
+If your main `.env` does not contain `OPEN_FOOD_FACTS_USER_AGENT`, create a dedicated local env file for function serving:
+
+```bash
+printf 'OPEN_FOOD_FACTS_USER_AGENT=Meal Prep Companion/1.3 (hello@example.com)\n' > /tmp/off.env
+npx supabase functions serve --env-file /tmp/off.env
+```
+
 ### Barcode Deployment
 
 Apply database migrations:

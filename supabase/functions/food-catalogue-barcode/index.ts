@@ -83,6 +83,11 @@ async function readCache(normalizedBarcode: string): Promise<BarcodeCacheRow | n
     body: JSON.stringify({ p_normalized_barcode: normalizedBarcode }),
   });
 
+  if (response.status === 404) {
+    console.warn('barcode_cache_read_miss', { normalizedBarcode, status: response.status });
+    return null;
+  }
+
   if (!response.ok) {
     throw new Error(`Cache read failed with status ${response.status}`);
   }
@@ -105,7 +110,10 @@ async function writeCache(payload: Record<string, unknown>) {
   });
 
   if (!response.ok) {
-    throw new Error(`Cache write failed with status ${response.status}`);
+    console.warn('barcode_cache_write_failed', {
+      normalizedBarcode: typeof payload.normalized_barcode === 'string' ? payload.normalized_barcode : 'unknown',
+      status: response.status,
+    });
   }
 }
 
