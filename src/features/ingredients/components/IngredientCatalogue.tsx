@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import type { StoredIngredient } from '../schemas/ingredient.schema';
-import type { UnitConversion } from '../conversions/unit-conversion.schema';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
 import { useRecipes } from '@/features/recipes/hooks';
 import { Button } from '@/components/ui/button';
@@ -26,6 +25,8 @@ import { normaliseName, formatNutrient, formatCalories } from '@/shared/utils/fo
 import { SOURCE_LABELS } from '../schemas/ingredient.schema';
 import { ExternalFoodSearchDialog } from '@/features/external-catalogue/components/ExternalFoodSearchDialog';
 import { useConfirm } from '@/shared/components/ConfirmDialog';
+import { useImportExternalIngredient } from '../hooks/use-ingredient-mutations';
+import type { ImportExternalIngredientInput, ImportExternalIngredientResult } from '../services/import-external-ingredient';
 
 const SORT_KEY = 'ingredient-catalogue-sort';
 const PAGE_SIZE_KEY = 'ingredient-catalogue-page-size';
@@ -72,6 +73,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
   const [editingIngredient, setEditingIngredient] = useState<StoredIngredient | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const { confirm, dialog } = useConfirm();
+  const importIngredient = useImportExternalIngredient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => {
     const saved = localStorage.getItem(PAGE_SIZE_KEY);
@@ -137,9 +139,18 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
     onSave(ingredient);
   };
 
-  const handleImport = (ingredient: StoredIngredient, _conversions?: UnitConversion[]) => {
-    onSave(ingredient);
-    toast.success(`"${ingredient.name}" imported.`);
+  const handleImport = async (input: ImportExternalIngredientInput): Promise<ImportExternalIngredientResult> => {
+    const result = await importIngredient.mutateAsync(input);
+    if (result.status === 'created') {
+      toast.success(`"${result.ingredient.name}" imported.`);
+    }
+    return result;
+  };
+
+  const handleOpenIngredient = (ingredient: StoredIngredient) => {
+    setImportOpen(false);
+    setEditingIngredient(ingredient);
+    setFormOpen(true);
   };
 
   const handleDelete = async (ingredient: StoredIngredient) => {
@@ -247,9 +258,11 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="font-medium text-sm truncate">{ing.name}</span>
-                      <Badge variant={ing.source === 'starter' ? 'secondary' : 'outline'} className="text-[10px] font-medium">
-                        {SOURCE_LABELS[ing.source] || ing.source}
-                      </Badge>
+                      {(ing.source === 'usda' || ing.source === 'open-food-facts') && (
+                        <Badge variant="outline" className="text-[10px] font-medium">
+                          Imported from {SOURCE_LABELS[ing.source] || ing.source}
+                        </Badge>
+                      )}
                       <span className="text-[11px] text-muted-foreground">{ing.category || 'Uncategorised'}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -316,7 +329,13 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
         onSave={handleSave}
       />
 
-      <ExternalFoodSearchDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
+      <ExternalFoodSearchDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        ingredients={ingredients}
+        onImport={handleImport}
+        onOpenIngredient={handleOpenIngredient}
+      />
       {dialog}
     </div>
   );

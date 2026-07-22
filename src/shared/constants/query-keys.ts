@@ -6,6 +6,7 @@ export const queryKeys = {
   ingredients: {
     all: ['ingredients'] as const,
     detail: (id: string) => ['ingredients', id] as const,
+    imported: (provider: string, externalId: string) => ['ingredients', 'imported', provider, externalId] as const,
   },
   dryToCooked: {
     all: ['dry-to-cooked'] as const,

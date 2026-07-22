@@ -31,6 +31,7 @@ import { Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { useFoodDetails } from '@/features/external-catalogue/hooks';
 import { useConfirm } from '@/shared/components/ConfirmDialog';
+import { SOURCE_LABELS } from '../schemas/ingredient.schema';
 
 const CATEGORIES = ['Protein', 'Carbohydrate', 'Fat', 'Dairy', 'Vegetable', 'Fruit', 'Sauce', 'Other'];
 
@@ -52,6 +53,7 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
   const [nameError, setNameError] = useState('');
 
   const currentKey = ingredient?.id ?? 'new';
+  const nutritionReadOnly = ingredient?.source === 'starter';
 
   const canSave = name.trim().length > 0;
 
@@ -74,14 +76,13 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
       setNameError('An ingredient with this name already exists.');
       return;
     }
-    const isCustom = ingredient?.source === 'custom';
     onSave({
       id: ingredient?.id ?? makeId(),
       name: normalised,
-      caloriesPer100g: isCustom ? (Number(calories) || 0) : (ingredient?.caloriesPer100g ?? 0),
-      proteinPer100g: isCustom ? (Number(protein) || 0) : (ingredient?.proteinPer100g ?? 0),
-      carbsPer100g: isCustom ? (Number(carbs) || 0) : (ingredient?.carbsPer100g ?? 0),
-      fatPer100g: isCustom ? (Number(fat) || 0) : (ingredient?.fatPer100g ?? 0),
+      caloriesPer100g: nutritionReadOnly ? (ingredient?.caloriesPer100g ?? 0) : (Number(calories) || 0),
+      proteinPer100g: nutritionReadOnly ? (ingredient?.proteinPer100g ?? 0) : (Number(protein) || 0),
+      carbsPer100g: nutritionReadOnly ? (ingredient?.carbsPer100g ?? 0) : (Number(carbs) || 0),
+      fatPer100g: nutritionReadOnly ? (ingredient?.fatPer100g ?? 0) : (Number(fat) || 0),
       category: category === 'none' ? '' : category,
       source: ingredient?.source ?? 'custom',
       externalSourceId: ingredient?.externalSourceId ?? null,
@@ -109,7 +110,7 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
               {nameError && <p className="text-xs text-destructive">{nameError}</p>}
             </div>
 
-            {ingredient && ingredient.source !== 'custom' ? (
+            {ingredient && nutritionReadOnly ? (
               <div>
                 <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Nutrition (per 100g)</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -148,6 +149,29 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
                 <div className="space-y-1.5">
                   <Label htmlFor="ing-fat" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fat / 100g</Label>
                   <Input id="ing-fat" type="number" value={fat} onChange={(e) => setFat(e.target.value)} placeholder="0" min="0" step="0.1" />
+                </div>
+              </div>
+            )}
+
+            {isEditing && ingredient && ingredient.source !== 'custom' && ingredient.source !== 'starter' && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px]">Imported from {SOURCE_LABELS[ingredient.source]}</Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Saved as your own editable copy. Changes here do not sync back to {SOURCE_LABELS[ingredient.source]}.</p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="block text-muted-foreground">Provider</span>
+                    <span className="font-medium">{SOURCE_LABELS[ingredient.source]}</span>
+                  </div>
+                  <div>
+                    <span className="block text-muted-foreground">External ID</span>
+                    <span className="font-medium">{ingredient.externalSourceId}</span>
+                  </div>
+                  <div>
+                    <span className="block text-muted-foreground">Imported</span>
+                    <span className="font-medium">{ingredient.importedAt ? new Date(ingredient.importedAt).toLocaleDateString() : '—'}</span>
+                  </div>
                 </div>
               </div>
             )}
