@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Search, Plus, Trash2, Pencil, Carrot, Database, RefreshCw } from 'lucide-react';
+import { Search, Plus, Trash2, Pencil, Carrot, Database, RefreshCw, ScanBarcode } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
 import { normaliseName, formatNutrient, formatCalories } from '@/shared/utils/format';
@@ -27,6 +27,7 @@ import { ExternalFoodSearchDialog } from '@/features/external-catalogue/componen
 import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { useImportExternalIngredient } from '../hooks/use-ingredient-mutations';
 import type { ImportExternalIngredientInput, ImportExternalIngredientResult } from '../services/import-external-ingredient';
+import { BarcodeImportDialog } from '@/features/barcode-scanning/components/barcode-import-dialog';
 
 const SORT_KEY = 'ingredient-catalogue-sort';
 const PAGE_SIZE_KEY = 'ingredient-catalogue-page-size';
@@ -72,6 +73,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
   const [formOpen, setFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<StoredIngredient | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
   const { confirm, dialog } = useConfirm();
   const importIngredient = useImportExternalIngredient();
   const [page, setPage] = useState(1);
@@ -132,6 +134,12 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
 
   const handleCreate = () => {
     setEditingIngredient(null);
+    setFormOpen(true);
+  };
+
+  const handleOpenManualFromBarcode = (draft: StoredIngredient | null) => {
+    setBarcodeOpen(false);
+    setEditingIngredient(draft);
     setFormOpen(true);
   };
 
@@ -229,6 +237,10 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
             ))}
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" onClick={() => setBarcodeOpen(true)}>
+          <ScanBarcode className="mr-1.5 h-4 w-4" />
+          Scan barcode
+        </Button>
       </div>
 
       <Separator />
@@ -335,6 +347,14 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete, onR
         ingredients={ingredients}
         onImport={handleImport}
         onOpenIngredient={handleOpenIngredient}
+      />
+      <BarcodeImportDialog
+        open={barcodeOpen}
+        onOpenChange={setBarcodeOpen}
+        ingredients={ingredients}
+        onImport={handleImport}
+        onOpenIngredient={handleOpenIngredient}
+        onOpenManual={handleOpenManualFromBarcode}
       />
       {dialog}
     </div>

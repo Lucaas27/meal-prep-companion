@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import IngredientCatalogue from './IngredientCatalogue';
 
@@ -15,9 +15,17 @@ vi.mock('@/features/external-catalogue/components/ExternalFoodSearchDialog', () 
   ExternalFoodSearchDialog: () => null,
 }));
 
+vi.mock('@/features/barcode-scanning/components/barcode-import-dialog', () => ({
+  BarcodeImportDialog: () => null,
+}));
+
 vi.mock('@/shared/components/ConfirmDialog', () => ({
   useConfirm: () => ({ confirm: vi.fn(), dialog: null }),
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('IngredientCatalogue', () => {
   it('shows an imported source badge and no badge for manual ingredients', () => {
@@ -64,5 +72,15 @@ describe('IngredientCatalogue', () => {
 
     expect(screen.getByText(/imported from usda/i)).not.toBeNull();
     expect(screen.queryByText(/imported from custom/i)).toBeNull();
+  });
+
+  it('shows a scan barcode action near the catalogue controls', () => {
+    render(
+      <TooltipProvider>
+        <IngredientCatalogue ingredients={[]} onSave={vi.fn()} onDelete={vi.fn()} />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getAllByRole('button', { name: /scan barcode/i }).length).toBeGreaterThan(0);
   });
 });
