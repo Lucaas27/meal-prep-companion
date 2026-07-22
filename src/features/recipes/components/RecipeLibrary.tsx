@@ -17,7 +17,7 @@ import {
   ChefHat,
   LayoutGrid,
   List,
-  Trash2,
+  Trash2, RefreshCw,
 } from 'lucide-react';
 import { RecipeGridView } from './RecipeGridView';
 import { RecipeListView } from './RecipeListView';
@@ -117,6 +117,7 @@ interface Props {
   onBulkDelete?: (ids: string[]) => void;
   onToggleFavourite: (recipe: Recipe) => void;
   onNew: () => void;
+  onRefresh?: () => void;
 }
 
 export default function RecipeLibrary({
@@ -127,6 +128,7 @@ export default function RecipeLibrary({
   onBulkDelete,
   onToggleFavourite,
   onNew,
+  onRefresh,
 }: Props) {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortValue>(loadSort);
@@ -245,10 +247,17 @@ export default function RecipeLibrary({
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={onNew} size="sm">
-            <Plus className="h-4 w-4 mr-1.5" />
-            New
-          </Button>
+          <div className="flex items-center gap-1.5">
+            {onRefresh && (
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={onRefresh} aria-label="Refresh">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            )}
+            <Button onClick={onNew} size="sm">
+              <Plus className="h-4 w-4 mr-1.5" />
+              New
+            </Button>
+          </div>
         </div>
       </div>
 

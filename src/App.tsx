@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Routes, Route, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
 import type { StoredIngredient } from '@/features/ingredients/schemas/ingredient.schema';
@@ -53,6 +54,15 @@ export default function App() {
   const deleteIngredient = useDeleteIngredient();
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const refreshRecipes = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['recipes'] });
+  }, [queryClient]);
+
+  const refreshIngredients = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+  }, [queryClient]);
 
   const handleNew = useCallback(() => {
     navigate('/recipes/new');
@@ -153,6 +163,7 @@ export default function App() {
                 onBulkDelete={handleBulkDeleteRecipes}
                 onToggleFavourite={handleToggleFavourite}
                 onNew={handleNew}
+                onRefresh={refreshRecipes}
               />
             </ProtectedRoute>
           }
@@ -169,6 +180,7 @@ export default function App() {
                 ingredients={storedIngredients}
                 onSave={handleSaveIngredient}
                 onDelete={handleDeleteIngredient}
+                onRefresh={refreshIngredients}
               />
             </ProtectedRoute>
           }

@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Search, Plus, Trash2, Pencil, Carrot, Database } from 'lucide-react';
+import { Search, Plus, Trash2, Pencil, Carrot, Database, RefreshCw } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
 import { normaliseName, formatNutrient, formatCalories } from '@/shared/utils/format';
@@ -60,9 +60,10 @@ interface Props {
   ingredients: StoredIngredient[];
   onSave: (ingredient: StoredIngredient) => void;
   onDelete: (id: string) => void;
+  onRefresh?: () => void;
 }
 
-export default function IngredientCatalogue({ ingredients, onSave, onDelete }: Props) {
+export default function IngredientCatalogue({ ingredients, onSave, onDelete, onRefresh }: Props) {
   const { data: recipes = [] } = useRecipes();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortValue>(loadSort);
@@ -156,6 +157,11 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
           </p>
         </div>
         <div className="flex items-center gap-1.5">
+          {onRefresh && (
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={onRefresh} aria-label="Refresh">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
             <Database className="h-4 w-4 mr-1.5" />
             Import

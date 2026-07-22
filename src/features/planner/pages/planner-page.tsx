@@ -236,10 +236,10 @@ export default function PlannerPage() {
       : null;
 
     return (
-      <div key={e.id} className="rounded-lg border bg-card p-3">
+      <div key={e.id} className="rounded-lg border bg-card p-3 cursor-pointer" onClick={() => handleEdit(e)}>
         <div className="flex items-center justify-between">
           <span className="font-medium text-sm">{recipe.name}</span>
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5" onClick={(ev) => ev.stopPropagation()}>
             {e.servings > 1 && <Badge variant="secondary" className="text-[10px]">×{e.servings}</Badge>}
             <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Edit</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenCopy(e)}><Copy className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Copy</TooltipContent></Tooltip>
