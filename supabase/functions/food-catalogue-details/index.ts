@@ -12,8 +12,8 @@ const usdaFoodDetailSchema = z.object({
   description: z.string(),
   brandName: z.string().optional(),
   dataType: z.string().optional(),
-  foodCategory: z.union([z.string(), z.record(z.unknown())]).optional().default(null),
-  foodNutrients: z.array(z.record(z.unknown())).optional(),
+  foodCategory: z.union([z.string(), z.record(z.string(), z.unknown())]).nullable().optional(),
+  foodNutrients: z.array(z.record(z.string(), z.unknown())).optional(),
   foodPortions: z
     .array(
       z.object({
@@ -35,7 +35,7 @@ interface UsdaFoodDetail {
   description: string;
   brandName?: string;
   dataType?: string;
-  foodCategory?: string;
+  foodCategory?: string | Record<string, unknown> | null;
   foodNutrients?: { nutrientId?: number; nutrientName?: string; value?: number }[];
   foodPortions?: {
     gramWeight?: number;
