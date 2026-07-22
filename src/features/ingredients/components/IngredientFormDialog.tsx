@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { StoredIngredient } from '../schemas/ingredient.schema';
-import type { ExternalFoodDetails } from '@/features/external-catalogue/types';
 import { makeId } from '@/shared/lib/ids';
 import { ingredientRepository } from '../repositories/ingredient.repository';
 import { useUnitConversions, useCreateUnitConversion, useUpdateUnitConversion, useDeleteUnitConversion } from '../conversions/use-unit-conversions';
