@@ -25,6 +25,27 @@ export interface ExternalFoodDetails extends ExternalFoodSearchResult {
   retrievedAt: string;
 }
 
+export type ExternalFoodProvider = 'usda' | 'open-food-facts';
+
+export type BarcodeProductCompletenessStatus =
+  | 'complete'
+  | 'partial'
+  | 'missing_name'
+  | 'missing_nutrition';
+
+export interface ExternalBarcodeFoodDetails extends ExternalFoodDetails {
+  provider: 'open-food-facts';
+  barcode: string;
+  imageUrl: string | null;
+  packageQuantityText: string | null;
+  servingSizeText: string | null;
+  servingQuantityGrams: number | null;
+  fibrePer100g: number | null;
+  saltPer100g: number | null;
+  sodiumPer100g: number | null;
+  completenessStatus: BarcodeProductCompletenessStatus;
+}
+
 export interface ExternalFoodSearchPage {
   items: ExternalFoodSearchResult[];
   totalHits: number;

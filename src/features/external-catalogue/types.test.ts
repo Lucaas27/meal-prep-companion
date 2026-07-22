@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { externalSearchResultSchema, externalFoodDetailsSchema, externalFoodSearchPageSchema } from './schemas';
+import {
+  externalSearchResultSchema,
+  externalFoodDetailsSchema,
+  externalFoodSearchPageSchema,
+  externalBarcodeFoodDetailsSchema,
+} from './schemas';
 import { ProviderError } from './types';
 
 describe('externalSearchResultSchema', () => {
@@ -56,6 +61,37 @@ describe('externalFoodDetailsSchema', () => {
       sourceUrl: null, retrievedAt: '2026-01-01T00:00:00Z',
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe('externalBarcodeFoodDetailsSchema', () => {
+  it('accepts barcode details with nullable extended nutrients', () => {
+    const r = externalBarcodeFoodDetailsSchema.safeParse({
+      provider: 'open-food-facts',
+      externalId: '5010029201104',
+      barcode: '05010029201104',
+      name: 'Example Product',
+      description: null,
+      brand: 'Example Brand',
+      dataType: 'packaged-food',
+      caloriesPer100g: 250,
+      proteinPer100g: 6,
+      carbohydratesPer100g: 30,
+      fatPer100g: 10,
+      fibrePer100g: null,
+      saltPer100g: null,
+      sodiumPer100g: 0.4,
+      category: 'Snack',
+      servingOptions: [],
+      sourceUrl: 'https://world.openfoodfacts.org/product/5010029201104',
+      retrievedAt: '2026-07-22T00:00:00Z',
+      imageUrl: null,
+      packageQuantityText: '500 g',
+      servingSizeText: '30 g',
+      servingQuantityGrams: 30,
+      completenessStatus: 'partial',
+    });
+    expect(r.success).toBe(true);
   });
 });
 

@@ -1,4 +1,90 @@
 export interface Database {
+  private: {
+    Tables: {
+      barcode_products: {
+        Row: {
+          id: string;
+          normalized_barcode: string;
+          provider: string;
+          provider_product_id: string;
+          product_name: string | null;
+          brand: string | null;
+          image_url: string | null;
+          package_quantity_text: string | null;
+          serving_size_text: string | null;
+          serving_quantity_grams: number | null;
+          calories_per_100g: number | null;
+          protein_per_100g: number | null;
+          carbohydrates_per_100g: number | null;
+          fat_per_100g: number | null;
+          fibre_per_100g: number | null;
+          salt_per_100g: number | null;
+          sodium_per_100g: number | null;
+          raw_provider_response: Record<string, unknown>;
+          completeness_status: string;
+          fetched_at: string;
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          normalized_barcode: string;
+          provider: string;
+          provider_product_id: string;
+          product_name?: string | null;
+          brand?: string | null;
+          image_url?: string | null;
+          package_quantity_text?: string | null;
+          serving_size_text?: string | null;
+          serving_quantity_grams?: number | null;
+          calories_per_100g?: number | null;
+          protein_per_100g?: number | null;
+          carbohydrates_per_100g?: number | null;
+          fat_per_100g?: number | null;
+          fibre_per_100g?: number | null;
+          salt_per_100g?: number | null;
+          sodium_per_100g?: number | null;
+          raw_provider_response?: Record<string, unknown>;
+          completeness_status: string;
+          fetched_at?: string;
+          expires_at: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          normalized_barcode?: string;
+          provider?: string;
+          provider_product_id?: string;
+          product_name?: string | null;
+          brand?: string | null;
+          image_url?: string | null;
+          package_quantity_text?: string | null;
+          serving_size_text?: string | null;
+          serving_quantity_grams?: number | null;
+          calories_per_100g?: number | null;
+          protein_per_100g?: number | null;
+          carbohydrates_per_100g?: number | null;
+          fat_per_100g?: number | null;
+          fibre_per_100g?: number | null;
+          salt_per_100g?: number | null;
+          sodium_per_100g?: number | null;
+          raw_provider_response?: Record<string, unknown>;
+          completeness_status?: string;
+          fetched_at?: string;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
   public: {
     Tables: {
       ingredients: {
