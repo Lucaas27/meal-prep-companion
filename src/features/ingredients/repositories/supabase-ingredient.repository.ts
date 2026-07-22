@@ -12,7 +12,11 @@ function asInsert(row: Record<string, unknown>): any {
 export const supabaseIngredientRepository = {
   async getAll(): Promise<StoredIngredient[]> {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from('ingredients').select('*').order('name');
+    const { data: user } = await supabase.auth.getUser();
+    const userId = user.user?.id;
+    if (!userId) return [];
+
+    const { data, error } = await supabase.from('ingredients').select('*').eq('user_id', userId).order('name');
 
     if (error) {
       console.error('Failed to load ingredients:', error);
@@ -77,6 +81,7 @@ export const supabaseIngredientRepository = {
 
   async delete(id: string): Promise<void> {
     const supabase = getSupabaseClient();
+    await supabase.from('recipe_ingredients').delete().eq('ingredient_id', id);
     const { error } = await supabase.from('ingredients').delete().eq('id', id);
 
     if (error) {

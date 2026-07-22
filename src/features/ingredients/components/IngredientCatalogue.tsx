@@ -142,12 +142,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
   };
 
   const handleDelete = async (ingredient: StoredIngredient) => {
-    const usage = getRecipeUsage(ingredient.name, recipes);
-    if (usage > 0) {
-      toast.error(`"${ingredient.name}" is used in ${usage} recipe${usage > 1 ? 's' : ''}. Remove it from those recipes first.`);
-      return;
-    }
-    if (await confirm('Delete ingredient', `Delete "${ingredient.name}"?`)) {
+    if (await confirm('Delete ingredient', `Delete "${ingredient.name}"? This will remove it from any recipes using it.`)) {
       onDelete(ingredient.id);
     }
   };
