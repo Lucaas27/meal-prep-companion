@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { useFoodDetails } from '@/features/external-catalogue/hooks';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 
 const CATEGORIES = ['Protein', 'Carbohydrate', 'Fat', 'Dairy', 'Vegetable', 'Fruit', 'Sauce', 'Other'];
 
@@ -185,6 +186,7 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
 }
 
 function ConversionSection({ ingredientId, ingredientName }: { ingredientId: string; ingredientName: string }) {
+  const { confirm, dialog } = useConfirm();
   const { data: conversions = [] } = useUnitConversions(ingredientId);
   const createConv = useCreateUnitConversion();
   const updateConv = useUpdateUnitConversion();
@@ -226,8 +228,8 @@ function ConversionSection({ ingredientId, ingredientName }: { ingredientId: str
     });
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Delete this conversion?')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm('Delete conversion', 'Delete this conversion?')) {
       deleteConv.mutate(id, {
         onSuccess: () => toast.success('Conversion deleted!'),
         onError: () => toast.error('Cannot delete — this conversion may be in use by a recipe.'),
@@ -328,6 +330,7 @@ function ConversionSection({ ingredientId, ingredientName }: { ingredientId: str
           </div>
         </div>
       </div>
+      {dialog}
     </>
   );
 }

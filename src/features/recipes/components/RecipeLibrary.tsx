@@ -22,6 +22,7 @@ import {
 import { RecipeGridView } from './RecipeGridView';
 import { RecipeListView } from './RecipeListView';
 import { Pagination } from '@/shared/components/Pagination';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 
 function loadPageSize(): number {
   const saved = localStorage.getItem(PAGE_SIZE_KEY);
@@ -133,6 +134,7 @@ export default function RecipeLibrary({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(loadPageSize);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { confirm, dialog } = useConfirm();
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -143,10 +145,10 @@ export default function RecipeLibrary({
     });
   }, []);
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     const count = selectedIds.size;
-    if (confirm(`Delete ${count} recipe${count > 1 ? 's' : ''}?`)) {
+    if (await confirm('Delete recipes', `Delete ${count} recipe${count > 1 ? 's' : ''}?`)) {
       if (onBulkDelete) {
         onBulkDelete(Array.from(selectedIds));
       } else {
@@ -356,6 +358,7 @@ export default function RecipeLibrary({
           setPage(1);
         }}
       />
+      {dialog}
     </div>
   );
 }

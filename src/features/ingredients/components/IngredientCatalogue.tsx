@@ -22,9 +22,10 @@ import { toast } from 'sonner';
 import { Search, Plus, Trash2, Pencil, Carrot, Database } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
-import { normaliseName, formatNutrient, formatCalories } from '@/shared/utils/format';
+import { normaliseName } from '@/shared/utils/format';
 import { SOURCE_LABELS } from '../schemas/ingredient.schema';
 import { ExternalFoodSearchDialog } from '@/features/external-catalogue/components/ExternalFoodSearchDialog';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 
 const SORT_KEY = 'ingredient-catalogue-sort';
 const PAGE_SIZE_KEY = 'ingredient-catalogue-page-size';
@@ -69,6 +70,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
   const [formOpen, setFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<StoredIngredient | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const { confirm, dialog } = useConfirm();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => {
     const saved = localStorage.getItem(PAGE_SIZE_KEY);
@@ -139,13 +141,13 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
     toast.success(`"${ingredient.name}" imported.`);
   };
 
-  const handleDelete = (ingredient: StoredIngredient) => {
+  const handleDelete = async (ingredient: StoredIngredient) => {
     const usage = getRecipeUsage(ingredient.name, recipes);
     if (usage > 0) {
       toast.error(`"${ingredient.name}" is used in ${usage} recipe${usage > 1 ? 's' : ''}. Remove it from those recipes first.`);
       return;
     }
-    if (confirm(`Delete "${ingredient.name}"?`)) {
+    if (await confirm('Delete ingredient', `Delete "${ingredient.name}"?`)) {
       onDelete(ingredient.id);
     }
   };
@@ -313,6 +315,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
       />
 
       <ExternalFoodSearchDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
+      {dialog}
     </div>
   );
 }

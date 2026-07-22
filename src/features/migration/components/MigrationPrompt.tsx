@@ -10,6 +10,7 @@ import {
 } from '@/application-services/migration-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { Loader2, Database, Download, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,8 +56,10 @@ export function MigrationPrompt() {
     }
   };
 
-  const handleClearLocal = () => {
-    if (confirm('Delete all local browser data? This will not affect your migrated Supabase data.')) {
+  const { confirm, dialog } = useConfirm();
+
+  const handleClearLocal = async () => {
+    if (await confirm('Clear local data', 'Delete all local browser data? This will not affect your migrated Supabase data.')) {
       clearLocalData();
       toast.success('Local data cleared.');
       setDone(true);
@@ -113,6 +116,7 @@ export function MigrationPrompt() {
           </Button>
         )}
       </CardContent>
+      {dialog}
     </Card>
   );
 }

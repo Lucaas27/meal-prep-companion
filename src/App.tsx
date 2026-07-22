@@ -11,6 +11,7 @@ import {
 import { useIngredients, useCreateIngredient, useDeleteIngredient } from '@/features/ingredients/hooks';
 import { AppShell } from '@/app/layout/app-layout';
 import { toast } from 'sonner';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import RecipeLibrary from '@/features/recipes/components/RecipeLibrary';
 import RecipeSheet from '@/features/recipes/components/RecipeSheet';
 import DryCookedCalculator from '@/features/dry-to-cooked/components/DryCookedCalculator';
@@ -70,6 +71,7 @@ export default function App() {
           toast.success(editingRecipe ? 'Recipe updated!' : 'Recipe saved!');
           setSheetOpen(false);
         },
+        onError: (err) => toast.error(String(err)),
       });
     },
     [saveRecipe, editingRecipe],
@@ -77,7 +79,10 @@ export default function App() {
 
   const handleToggleFavourite = useCallback(
     (recipe: Recipe) => {
-      updateRecipe.mutate({ ...recipe, favourite: !recipe.favourite });
+      updateRecipe.mutate(
+        { ...recipe, favourite: !recipe.favourite },
+        { onError: (err) => toast.error(String(err)) },
+      );
     },
     [updateRecipe],
   );
@@ -86,25 +91,29 @@ export default function App() {
     (recipe: Recipe) => {
       duplicateRecipe.mutate(recipe, {
         onSuccess: () => toast.success('Recipe duplicated!'),
+        onError: (err) => toast.error(String(err)),
       });
     },
     [duplicateRecipe],
   );
 
+  const { confirm, dialog } = useConfirm();
+
   const handleDeleteRecipe = useCallback(
-    (id: string) => {
-      if (confirm('Delete this recipe?')) {
+    async (id: string) => {
+      if (await confirm('Delete recipe', 'Delete this recipe?')) {
         deleteRecipe.mutate(id, {
           onSuccess: () => toast.success('Recipe deleted!'),
+          onError: (err) => toast.error(String(err)),
         });
       }
     },
-    [deleteRecipe],
+    [deleteRecipe, confirm],
   );
 
   const handleBulkDeleteRecipes = useCallback(
     (ids: string[]) => {
-      ids.forEach((id) => deleteRecipe.mutate(id));
+      ids.forEach((id) => deleteRecipe.mutate(id, { onError: (err) => toast.error(String(err)) }));
       toast.success(`${ids.length} recipe${ids.length > 1 ? 's' : ''} deleted!`);
     },
     [deleteRecipe],
@@ -114,6 +123,7 @@ export default function App() {
     (ing: Parameters<typeof saveIngredient.mutate>[0]) => {
       saveIngredient.mutate(ing, {
         onSuccess: () => toast.success('Ingredient added!'),
+        onError: (err) => toast.error(String(err)),
       });
     },
     [saveIngredient],
@@ -121,7 +131,7 @@ export default function App() {
 
   const handleDeleteIngredient = useCallback(
     (id: string) => {
-      deleteIngredient.mutate(id);
+      deleteIngredient.mutate(id, { onError: (err) => toast.error(String(err)) });
     },
     [deleteIngredient],
   );
@@ -175,6 +185,7 @@ export default function App() {
         onSave={handleSave}
         storedIngredients={storedIngredients}
       />
+      {dialog}
     </AppShell>
   );
 }

@@ -60,7 +60,7 @@ export function recipeToRow(recipe: Recipe, userId: string): Database['public'][
     name: recipe.name,
     portions: recipe.portions,
     notes: recipe.notes,
-    tags: recipe.tags.length > 0 ? recipe.tags : null,
+    tags: recipe.tags.length > 0 ? recipe.tags : [],
     favourite: recipe.favourite,
   };
 }

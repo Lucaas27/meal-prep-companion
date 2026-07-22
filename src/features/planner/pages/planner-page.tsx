@@ -6,18 +6,20 @@ import {
   useCreateMealPlanEntry,
   useUpdateMealPlanEntry,
   useDeleteMealPlanEntry,
-  useDuplicateMealPlanEntry,
   useMoveMealPlanEntry,
 } from '../hooks/use-meal-plan';
 import { getMonday, getWeekDays, formatDate, addWeeks, isSameDay } from '@/shared/utils/date';
 import { calcBatchTotals, calcPerPortion } from '@/features/recipes/utils/calculations';
 import { formatNutrient, formatCalories } from '@/shared/utils/format';
+import { makeId } from '@/shared/lib/ids';
 import { calculateWeekNutrition, calculateDayAverages } from '../utils/nutrition-summary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import {
   Select,
   SelectContent,
@@ -70,7 +72,6 @@ export default function PlannerPage() {
   const createEntry = useCreateMealPlanEntry();
   const updateEntry = useUpdateMealPlanEntry();
   const deleteEntry = useDeleteMealPlanEntry();
-  const duplicateEntry = useDuplicateMealPlanEntry();
   const moveEntry = useMoveMealPlanEntry();
 
   const weekParam = searchParams.get('week') || formatDate(getMonday(new Date()));
@@ -89,6 +90,11 @@ export default function PlannerPage() {
   const [moveTarget, setMoveTarget] = useState<MealPlanEntry | null>(null);
   const [moveDate, setMoveDate] = useState('');
   const [moveSlot, setMoveSlot] = useState('');
+
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyTarget, setCopyTarget] = useState<MealPlanEntry | null>(null);
+  const [copyDate, setCopyDate] = useState('');
+  const [copySlot, setCopySlot] = useState('');
 
   const recipeMap = useMemo(() => {
     const map = new Map<string, Recipe>();
@@ -116,6 +122,8 @@ export default function PlannerPage() {
     setSearchParams({ week: formatDate(getMonday(new Date())) });
   };
 
+  const { confirm, dialog } = useConfirm();
+
   const handleAdd = (date: string, slot: string) => {
     setEditingEntry(null);
     setDefaultDate(date);
@@ -136,18 +144,12 @@ export default function PlannerPage() {
     });
   };
 
-  const handleDelete = (entry: MealPlanEntry) => {
-    if (confirm(`Remove "${recipeMap.get(entry.recipeId)?.name ?? 'meal'}" from the planner?`)) {
+  const handleDelete = async (entry: MealPlanEntry) => {
+    if (await confirm('Remove meal', `Remove "${recipeMap.get(entry.recipeId)?.name ?? 'meal'}" from the planner?`)) {
       deleteEntry.mutate(entry.id, {
         onSuccess: () => toast.success('Meal removed!'),
       });
     }
-  };
-
-  const handleDuplicate = (entry: MealPlanEntry) => {
-    duplicateEntry.mutate(entry, {
-      onSuccess: () => toast.success('Meal duplicated!'),
-    });
   };
 
   const handleOpenMove = (entry: MealPlanEntry) => {
@@ -165,6 +167,26 @@ export default function PlannerPage() {
         onSuccess: () => {
           toast.success('Meal moved!');
           setMoveDialogOpen(false);
+        },
+      },
+    );
+  };
+
+  const handleOpenCopy = (entry: MealPlanEntry) => {
+    setCopyTarget(entry);
+    setCopyDate(entry.plannedDate);
+    setCopySlot(entry.mealSlot);
+    setCopyDialogOpen(true);
+  };
+
+  const handleCopy = () => {
+    if (!copyTarget) return;
+    createEntry.mutate(
+      { ...copyTarget, id: makeId(), plannedDate: copyDate, mealSlot: copySlot as MealPlanEntry['mealSlot'], createdAt: Date.now(), updatedAt: Date.now() },
+      {
+        onSuccess: () => {
+          toast.success('Meal copied!');
+          setCopyDialogOpen(false);
         },
       },
     );
@@ -219,10 +241,10 @@ export default function PlannerPage() {
           <span className="font-medium text-sm">{recipe.name}</span>
           <div className="flex items-center gap-0.5">
             {e.servings > 1 && <Badge variant="secondary" className="text-[10px]">×{e.servings}</Badge>}
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenMove(e)}><ArrowRightLeft className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(e)}><Trash2 className="h-3.5 w-3.5" /></Button>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Edit</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenCopy(e)}><Copy className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Copy</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenMove(e)}><ArrowRightLeft className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Move</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(e)}><Trash2 className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Delete</TooltipContent></Tooltip>
           </div>
         </div>
         {per && (
@@ -418,6 +440,38 @@ export default function PlannerPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Copy Meal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Date</Label>
+              <Input type="date" value={copyDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCopyDate(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Slot</Label>
+              <Select value={copySlot} onValueChange={setCopySlot}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SLOT_ORDER.map((s) => (
+                    <SelectItem key={s} value={s}>{SLOT_LABELS[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCopyDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCopy} disabled={!copyDate}>Copy</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {dialog}
     </div>
   );
 }

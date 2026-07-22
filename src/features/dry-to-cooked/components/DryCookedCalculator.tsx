@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import type { DryCookedInputs } from '../schemas/dry-cooked.schema';
 import type { SavedCalculation } from '../schemas/saved-calculation.schema';
 import {
@@ -130,14 +131,23 @@ export default function DryCookedCalculator() {
     setEditingId(calc.id);
   };
 
-  const handleReset = () => {
+  const { confirm, dialog } = useConfirm();
+
+  const handleReset = async () => {
     if (inputs.dryWeight !== DEFAULTS.dryWeight || inputs.cookedWeight !== DEFAULTS.cookedWeight) {
-      if (!confirm('Reset the calculator?')) return;
+      if (!(await confirm('Reset calculator', 'Reset the calculator?'))) return;
     }
     setInputs({ ...DEFAULTS });
     setDryServing(0);
     setSaveName('');
     setEditingId(null);
+  };
+
+  const handleDeleteCalculation = async (calc: SavedCalculation) => {
+    if (await confirm('Delete calculation', `Delete "${calc.name}"?`)) {
+      deleteMutation.mutate(calc.id);
+      if (editingId === calc.id) handleReset();
+    }
   };
 
   return (
@@ -338,22 +348,16 @@ export default function DryCookedCalculator() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => {
-                    if (confirm(`Delete "${calc.name}"?`)) {
-                      deleteMutation.mutate(calc.id);
-                      if (editingId === calc.id) {
-                        handleReset();
-                      }
-                    }
-                  }}
+                  onClick={() => handleDeleteCalculation(calc)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-          ))}
         </div>
-      )}
+      ))}
+      </div>
+    )}
+    {dialog}
 
       <div className="rounded-lg border bg-muted/30 p-4 text-[13px] text-muted-foreground leading-relaxed">
         <p>Cooking changes water content and weight, but not total calories or macros. This is an estimate — it does not account for drained fat, added oil, or food lost during preparation.</p>
