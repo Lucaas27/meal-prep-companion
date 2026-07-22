@@ -66,6 +66,7 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
     setFat(ingredient ? String(ingredient.fatPer100g) : '');
     setCategory(ingredient?.category || 'none');
     setNameError('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey]);
   /* eslint-enable react-hooks/set-state-in-effect */
 

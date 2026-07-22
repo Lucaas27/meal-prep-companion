@@ -48,6 +48,37 @@ npx supabase start
 
 The function proxies USDA FoodData Central search through Supabase, requiring an authenticated user and returning provider-neutral search results.
 
+**USDA Food Details** (`food-catalogue-details`):
+
+1. Set the USDA API key as a Supabase secret:
+   ```bash
+   npx supabase secrets set USDA_API_KEY=your-usda-key
+   ```
+
+2. Deploy:
+   ```bash
+   npx supabase functions deploy food-catalogue-details
+   ```
+
+3. For local development:
+   ```bash
+   npx supabase functions serve food-catalogue-details
+   ```
+
+The details function also requires an authenticated user and returns provider-neutral food details for the import review flow.
+
+### USDA Attribution
+
+Imported food search and nutrition data comes from USDA FoodData Central.
+Imported foods are saved as user-owned editable copies in this app and do not stay synchronised with USDA after import.
+
+## Known Limitations
+
+- Only USDA FoodData Central import is supported in v1.3.
+- Imported foods are editable local copies, not live-linked records.
+- Ingredient-specific units require a saved conversion before recipe and planner nutrition can be fully calculated.
+- If a recipe references a missing conversion, nutrition is shown as incomplete instead of guessing a gram equivalent.
+
 ## Features
 
 - **Recipe Library** — browse, search, sort, and filter your recipes. Grid or list view with pagination. Click a card to edit, star favourites, or duplicate.

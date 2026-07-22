@@ -19,6 +19,7 @@ const DISMISS_KEY = 'migration-banner-dismissed';
 export function MigrationPrompt() {
   const { user } = useAuth();
   const supabase = getSupabaseClientOrNull();
+  const { confirm, dialog } = useConfirm();
   const [status, setStatus] = useState<MigrationStatus | null>(null);
   const initialLoading = !!(user && supabase);
   const [loading, setLoading] = useState(initialLoading);
@@ -55,8 +56,6 @@ export function MigrationPrompt() {
       setMigrating(false);
     }
   };
-
-  const { confirm, dialog } = useConfirm();
 
   const handleClearLocal = async () => {
     if (await confirm('Clear local data', 'Delete all local browser data? This will not affect your migrated Supabase data.')) {
