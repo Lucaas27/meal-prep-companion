@@ -1,5 +1,5 @@
-import { normalizeBarcode } from '../../../src/features/external-catalogue/barcode';
-import type { ExternalBarcodeFoodDetails } from '../../../src/features/external-catalogue/types';
+import { normalizeBarcode } from '../../../src/features/external-catalogue/barcode.ts';
+import type { ExternalBarcodeFoodDetails } from '../../../src/features/external-catalogue/types.ts';
 
 export const OPEN_FOOD_FACTS_BASE = 'https://world.openfoodfacts.org/api/v3';
 export const BARCODE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;

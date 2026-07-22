@@ -3,7 +3,7 @@ import {
   buildOpenFoodFactsUrl,
   resolveBarcodeProduct,
   type BarcodeCacheRow,
-} from './shared';
+} from './shared.ts';
 
 const requestSchema = z.object({
   barcode: z.string().trim().min(1).max(64),
