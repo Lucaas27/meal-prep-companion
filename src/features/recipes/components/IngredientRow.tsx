@@ -1,5 +1,5 @@
 import { calcIngredientCalories, calcIngredientProtein, calcIngredientCarbs, calcIngredientFat } from '@/features/recipes/utils/calculations';
-import { round1dp } from '@/shared/utils/format';
+import { round1dp, formatNutrient } from '@/shared/utils/format';
 import type { Ingredient } from '@/features/recipes/schemas/recipe.schema';
 import type { UnitConversion } from '@/features/ingredients/conversions/unit-conversion.schema';
 import { Input } from '@/components/ui/input';
@@ -103,10 +103,10 @@ export default function IngredientRow({ ingredient, conversions = [], onChange, 
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{totalCal} kcal</span>
-        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{totalProt}g P</span>
-        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{totalCarbs}g C</span>
-        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{totalFat}g F</span>
+        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalCal)} kcal</span>
+        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalProt)}g P</span>
+        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalCarbs)}g C</span>
+        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalFat)}g F</span>
         <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 text-muted-foreground hover:text-destructive" onClick={onDelete} aria-label={`Remove ${ingredient.name || 'ingredient'}`}>
           <Trash2 className="h-4 w-4" />
         </Button>

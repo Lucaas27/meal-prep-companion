@@ -11,7 +11,7 @@ import {
 } from '../hooks/use-meal-plan';
 import { getMonday, getWeekDays, formatDate, addWeeks, isSameDay } from '@/shared/utils/date';
 import { calcBatchTotals, calcPerPortion } from '@/features/recipes/utils/calculations';
-import { round1dp } from '@/shared/utils/format';
+import { formatNutrient } from '@/shared/utils/format';
 import { calculateWeekNutrition, calculateDayAverages } from '../utils/nutrition-summary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -227,10 +227,10 @@ export default function PlannerPage() {
         </div>
         {per && (
           <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground">
-            <span>{round1dp(per.caloriesPerPortion * e.servings)} kcal</span>
-            <span>{round1dp(per.proteinPerPortion * e.servings)}g P</span>
-            <span>{round1dp(per.carbsPerPortion * e.servings)}g C</span>
-            <span>{round1dp(per.fatPerPortion * e.servings)}g F</span>
+            <span>{formatNutrient(per.caloriesPerPortion * e.servings)} kcal</span>
+            <span>{formatNutrient(per.proteinPerPortion * e.servings)}g P</span>
+            <span>{formatNutrient(per.carbsPerPortion * e.servings)}g C</span>
+            <span>{formatNutrient(per.fatPerPortion * e.servings)}g F</span>
           </div>
         )}
         {e.notes && <p className="text-[11px] text-muted-foreground mt-1">{e.notes}</p>}
@@ -263,19 +263,19 @@ export default function PlannerPage() {
       {!isLoading && !error && entries.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg border bg-card p-3 text-center">
-            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.calories)}</span>
+            <span className="block text-lg font-semibold tracking-tight">{formatNutrient(weekNutrition.calories)}</span>
             <span className="block text-[10px] text-muted-foreground">kcal</span>
           </div>
           <div className="rounded-lg border bg-card p-3 text-center">
-            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.protein)}g</span>
+            <span className="block text-lg font-semibold tracking-tight">{formatNutrient(weekNutrition.protein)}g</span>
             <span className="block text-[10px] text-muted-foreground">protein</span>
           </div>
           <div className="rounded-lg border bg-card p-3 text-center">
-            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.carbs)}g</span>
+            <span className="block text-lg font-semibold tracking-tight">{formatNutrient(weekNutrition.carbs)}g</span>
             <span className="block text-[10px] text-muted-foreground">carbs</span>
           </div>
           <div className="rounded-lg border bg-card p-3 text-center">
-            <span className="block text-lg font-semibold tracking-tight">{round1dp(weekNutrition.fat)}g</span>
+            <span className="block text-lg font-semibold tracking-tight">{formatNutrient(weekNutrition.fat)}g</span>
             <span className="block text-[10px] text-muted-foreground">fat</span>
           </div>
           {!weekNutrition.isComplete && (
@@ -285,7 +285,7 @@ export default function PlannerPage() {
           )}
           {dayAverages && (
             <div className="col-span-full text-center text-[10px] text-muted-foreground">
-              Daily avg: {round1dp(dayAverages.calories)} kcal · {round1dp(dayAverages.protein)}g P · {round1dp(dayAverages.carbs)}g C · {round1dp(dayAverages.fat)}g F
+              Daily avg: {formatNutrient(dayAverages.calories)} kcal · {formatNutrient(dayAverages.protein)}g P · {formatNutrient(dayAverages.carbs)}g C · {formatNutrient(dayAverages.fat)}g F
             </div>
           )}
         </div>
@@ -340,7 +340,7 @@ export default function PlannerPage() {
                 >
                   <span className="block font-semibold">{DAY_LABELS[idx]}</span>
                   <span className={cn('block text-lg font-bold mt-0.5', selectedDay === idx ? 'text-primary-foreground' : '')}>{day.getDate()}</span>
-                  {t && <span className="block text-[10px] mt-0.5 opacity-80">{round1dp(t.kcal)} kcal</span>}
+                  {t && <span className="block text-[10px] mt-0.5 opacity-80">{formatNutrient(t.kcal)} kcal</span>}
                 </button>
               );
             })}

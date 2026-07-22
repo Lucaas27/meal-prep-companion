@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
     const url = `${USDA_BASE}/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageNumber=${page}&pageSize=${pageSize}&dataType=Foundation,SR%20Legacy,Branded`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     let usdaRes: Response;
     try {

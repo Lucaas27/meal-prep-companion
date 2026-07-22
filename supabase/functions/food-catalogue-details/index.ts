@@ -12,16 +12,8 @@ const usdaFoodDetailSchema = z.object({
   description: z.string(),
   brandName: z.string().optional(),
   dataType: z.string().optional(),
-  foodCategory: z.string().optional(),
-  foodNutrients: z
-    .array(
-      z.object({
-        nutrientId: z.number().int().optional(),
-        nutrientName: z.string().optional(),
-        value: z.number().optional(),
-      }),
-    )
-    .optional(),
+  foodCategory: z.union([z.string(), z.record(z.unknown())]).optional().default(null),
+  foodNutrients: z.array(z.record(z.unknown())).optional(),
   foodPortions: z
     .array(
       z.object({
@@ -53,13 +45,44 @@ interface UsdaFoodDetail {
   }[];
 }
 
+function getNutrientValue(n: Record<string, unknown>): number | null {
+  if (typeof n.value === 'number') return n.value;
+  if (typeof n.amount === 'number') return n.amount;
+  return null;
+}
+
 function getNutrient(nutrients: UsdaFoodDetail['foodNutrients'], ...ids: number[]): number | null {
   if (!nutrients) return null;
+
+  const rawArr = nutrients as unknown as Record<string, unknown>[];
+
+  // 1. Try nutrientId at root
   for (const id of ids) {
-    const n = nutrients.find((fn) => fn.nutrientId === id);
-    if (n?.value != null) return n.value;
+    const byId = rawArr.find((fn) => fn.nutrientId === id);
+    const v = byId ? getNutrientValue(byId) : null;
+    if (v != null) return v;
   }
-  return null;
+
+  // 2. Try nutrient.id nested
+  for (const id of ids) {
+    const byNested = rawArr.find((fn) => {
+      const n = fn.nutrient as Record<string, unknown> | undefined;
+      return n?.id === id;
+    });
+    const v = byNested ? getNutrientValue(byNested) : null;
+    if (v != null) return v;
+  }
+
+  // 3. Fallback: match by name
+  const nameMap: Record<string, number[]> = { energy: [1008, 2047], protein: [1003], carbohydrate: [1005], 'total lipid': [1004], 'fat': [1004] };
+  const targetNames = Object.entries(nameMap).filter(([, targetIds]) => ids.some((id) => targetIds.includes(id))).map(([k]) => k);
+
+  const byName = rawArr.find((fn) => {
+    const name = fn.nutrientName as string | undefined || (fn.nutrient as Record<string, unknown> | undefined)?.name as string | undefined;
+    if (!name) return false;
+    return targetNames.some((k) => name.toLowerCase().includes(k));
+  });
+  return byName ? getNutrientValue(byName) : null;
 }
 
 // USDA measures nutrient per 100g for most foods.
@@ -74,16 +97,23 @@ function normaliseNutrient(value: number | null, dataType?: string): number | nu
   return value;
 }
 
-function mapPortions(portions: UsdaFoodDetail['foodPortions']) {
+function mapPortions(portions: UsdaFoodDetail['foodPortions'], caloriesPer100g: number | null) {
   if (!portions) return [];
+  const abbrMap: Record<string, string> = { oz: 'ounce', lb: 'pound', g: 'gram', kg: 'kilogram', ml: 'millilitre', l: 'litre' };
   return portions
     .filter((p) => p.gramWeight && p.gramWeight > 0)
-    .map((p) => ({
-      label: [p.modifier, p.measureUnit?.name].filter(Boolean).join(' ') || `${p.amount ?? 1} units`,
-      unit: 'g',
-      gramsPerUnit: p.gramWeight!,
-      sourceDescription: p.amount ? `Based on ${p.amount} ${p.measureUnit?.name ?? 'unit'}(s) at ${p.gramWeight}g each` : `${p.gramWeight}g per portion`,
-    }));
+    .map((p) => {
+      const modifier = p.modifier ? (abbrMap[p.modifier.toLowerCase()] || p.modifier) : null;
+      const count = p.amount ?? 1;
+      const totalGrams = p.gramWeight!;
+      const perUnit = totalGrams / count;
+      const calPerUnit = caloriesPer100g != null ? (perUnit / 100) * caloriesPer100g : null;
+      const label = modifier ? `${count} × ${modifier}${count > 1 ? 's' : ''}` : `${count} portion${count > 1 ? 's' : ''}`;
+      const desc = calPerUnit != null
+        ? `${perUnit.toFixed(1)}g (${Math.round(calPerUnit)} kcal) per ${modifier || 'portion'}`
+        : `${perUnit.toFixed(1)}g per ${modifier || 'portion'}`;
+      return { label, unit: 'g', gramsPerUnit: perUnit, sourceDescription: desc };
+    });
 }
 
 function mapDetails(food: UsdaFoodDetail) {
@@ -100,8 +130,8 @@ function mapDetails(food: UsdaFoodDetail) {
     proteinPer100g: normaliseNutrient(getNutrient(nutrients, 1003), food.dataType),
     carbohydratesPer100g: normaliseNutrient(getNutrient(nutrients, 1005), food.dataType),
     fatPer100g: normaliseNutrient(getNutrient(nutrients, 1004), food.dataType),
-    category: food.foodCategory ?? null,
-    servingOptions: mapPortions(food.foodPortions),
+    category: typeof food.foodCategory === 'string' ? food.foodCategory : null,
+    servingOptions: mapPortions(food.foodPortions, getNutrient(nutrients, 1008, 2047)),
     sourceUrl: `https://fdc.nal.usda.gov/fdc-app.html#/food-details/${food.fdcId}`,
     retrievedAt: new Date().toISOString(),
   };
@@ -152,7 +182,7 @@ Deno.serve(async (req: Request) => {
     const url = `${USDA_BASE}/food/${encodeURIComponent(externalId)}?api_key=${apiKey}`;
     console.log("checkpoint: calling USDA");
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     let usdaRes: Response;
     try {

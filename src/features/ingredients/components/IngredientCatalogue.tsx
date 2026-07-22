@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { StoredIngredient } from '../schemas/ingredient.schema';
+import type { UnitConversion } from '../conversions/unit-conversion.schema';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
 import { useRecipes } from '@/features/recipes/hooks';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ import { toast } from 'sonner';
 import { Search, Plus, Trash2, Pencil, Carrot, Database } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
-import { normaliseName } from '@/shared/utils/format';
+import { normaliseName, formatNutrient } from '@/shared/utils/format';
 import { SOURCE_LABELS } from '../schemas/ingredient.schema';
 import { ExternalFoodSearchDialog } from '@/features/external-catalogue/components/ExternalFoodSearchDialog';
 
@@ -129,6 +130,11 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
 
   const handleSave = (ingredient: StoredIngredient) => {
     onSave(ingredient);
+  };
+
+  const handleImport = (ingredient: StoredIngredient, _conversions?: UnitConversion[]) => {
+    onSave(ingredient);
+    toast.success(`"${ingredient.name}" imported.`);
   };
 
   const handleDelete = (ingredient: StoredIngredient) => {
@@ -243,10 +249,10 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
                       )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{ing.caloriesPer100g} kcal</span>
-                      <span>{ing.proteinPer100g}g P</span>
-                      <span>{ing.carbsPer100g}g C</span>
-                      <span>{ing.fatPer100g}g F</span>
+                      <span>{formatNutrient(ing.caloriesPer100g)} kcal</span>
+                      <span>{formatNutrient(ing.proteinPer100g)}g P</span>
+                      <span>{formatNutrient(ing.carbsPer100g)}g C</span>
+                      <span>{formatNutrient(ing.fatPer100g)}g F</span>
                       {usage > 0 && (
                         <span className="text-muted-foreground/70">
                           · used in {usage} recipe{usage > 1 ? 's' : ''}
@@ -306,7 +312,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
         onSave={handleSave}
       />
 
-      <ExternalFoodSearchDialog open={importOpen} onOpenChange={setImportOpen} />
+      <ExternalFoodSearchDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
     </div>
   );
 }

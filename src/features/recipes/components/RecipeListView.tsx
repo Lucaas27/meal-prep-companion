@@ -1,5 +1,5 @@
 import { calcBatchTotals, calcPerPortion } from '../utils/calculations';
-import { round1dp } from '@/shared/utils/format';
+import { formatNutrient } from '@/shared/utils/format';
 import {
   Table,
   TableBody,
@@ -107,16 +107,16 @@ export function RecipeListView({
                 </TableCell>
                 <TableCell className="font-medium">{recipe.name}</TableCell>
                 <TableCell className="text-right tabular-nums">
-                  {per ? round1dp(per.caloriesPerPortion) : '—'}
+                  {per ? formatNutrient(per.caloriesPerPortion) : '—'}
                 </TableCell>
                 <TableCell className="text-right tabular-nums hidden sm:table-cell">
-                  {per ? `${round1dp(per.proteinPerPortion)}g` : '—'}
+                  {per ? `${formatNutrient(per.proteinPerPortion)}g` : '—'}
                 </TableCell>
                 <TableCell className="text-right tabular-nums hidden md:table-cell">
-                  {per ? `${round1dp(per.carbsPerPortion)}g` : '—'}
+                  {per ? `${formatNutrient(per.carbsPerPortion)}g` : '—'}
                 </TableCell>
                 <TableCell className="text-right tabular-nums hidden md:table-cell">
-                  {per ? `${round1dp(per.fatPerPortion)}g` : '—'}
+                  {per ? `${formatNutrient(per.fatPerPortion)}g` : '—'}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {recipe.portions}

@@ -50,7 +50,7 @@ import {
 import IngredientRow from './IngredientRow';
 import NutritionSummary from './NutritionSummary';
 import { Plus, ShoppingBasket, Star, X, Check, ChevronsUpDown } from 'lucide-react';
-import { normaliseName } from '@/shared/utils/format';
+import { normaliseName, formatNutrient } from '@/shared/utils/format';
 import { useConversionsForIngredients } from '@/features/ingredients/conversions/use-unit-conversions';
 
 const STARTER_TAGS = [
@@ -295,7 +295,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                               <span className={alreadyAdded ? 'text-muted-foreground' : ''}>{si.name}</span>
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {si.caloriesPer100g} kcal · {si.proteinPer100g}g P · {si.carbsPer100g}g C · {si.fatPer100g}g F
+                              {formatNutrient(si.caloriesPer100g)} kcal · {formatNutrient(si.proteinPer100g)}g P · {formatNutrient(si.carbsPer100g)}g C · {formatNutrient(si.fatPer100g)}g F
                             </span>
                           </CommandItem>
                         );
