@@ -1,8 +1,10 @@
 import { getSupabaseClient } from '@/infrastructure/supabase/client';
 import { safeParseJson } from '@/shared/lib/storage';
-import { externalFoodSearchPageSchema, externalFoodDetailsSchema } from './schemas';
+import { FunctionsHttpError } from '@supabase/supabase-js';
+import { barcodeLookupRequestSchema, externalBarcodeFoodDetailsSchema, externalFoodSearchPageSchema, externalFoodDetailsSchema } from './schemas';
 import { ProviderError } from './types';
-import type { ExternalFoodSearchPage, ExternalFoodDetails } from './types';
+import { normalizeBarcode } from './barcode';
+import type { ExternalBarcodeFoodDetails, ExternalBarcodeLookupRequest, ExternalFoodSearchPage, ExternalFoodDetails } from './types';
 
 const CACHE_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const CACHE_PREFIX = 'external-food-cache:v1';
@@ -51,14 +53,35 @@ function parseFoodDetails(value: unknown): ExternalFoodDetails | null {
   return parsed.success ? parsed.data : null;
 }
 
+function parseBarcodeFoodDetails(value: unknown): ExternalBarcodeFoodDetails | null {
+  const parsed = externalBarcodeFoodDetailsSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
 async function getCacheScope() {
   const supabase = getSupabaseClient();
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? 'anonymous';
 }
 
-function makeCacheKey(scope: string, kind: 'search' | 'details', ...parts: string[]) {
+function makeCacheKey(scope: string, kind: 'search' | 'details' | 'barcode', ...parts: string[]) {
   return `${CACHE_PREFIX}:${scope}:${kind}:${parts.join(':')}`;
+}
+
+async function mapFunctionError(error: unknown, provider: string) {
+  if (error instanceof FunctionsHttpError && error.context instanceof Response) {
+    const payload = await error.context.clone().json().catch(() => null) as { error?: string; message?: string } | null;
+    const code = payload?.error;
+    const message = payload?.message || error.message;
+
+    if (code === 'invalid_query') throw new ProviderError('invalid_query', message, provider, error);
+    if (code === 'unauthenticated') throw new ProviderError('unauthenticated', message, provider, error);
+    if (code === 'not_found') throw new ProviderError('not_found', message, provider, error);
+    if (code === 'rate_limited') throw new ProviderError('rate_limited', message, provider, error);
+    if (code === 'invalid_response') throw new ProviderError('invalid_response', message, provider, error);
+  }
+
+  throw new ProviderError('unavailable', error instanceof Error ? error.message : 'Lookup failed', provider, error);
 }
 
 export function clearExternalFoodCache() {
@@ -123,6 +146,39 @@ export async function getFoodDetails(provider: string, externalId: string): Prom
   const parsed = externalFoodDetailsSchema.safeParse(data);
   if (!parsed.success) {
     throw new ProviderError('invalid_response', 'Invalid details response from provider', provider, parsed.error);
+  }
+
+  writeCache(cacheKey, parsed.data);
+  return parsed.data;
+}
+
+export async function getFoodByBarcode(request: ExternalBarcodeLookupRequest): Promise<ExternalBarcodeFoodDetails> {
+  const parsedRequest = barcodeLookupRequestSchema.safeParse(request);
+  if (!parsedRequest.success) {
+    throw new ProviderError('invalid_query', parsedRequest.error.issues[0]?.message || 'Invalid barcode request', 'open-food-facts', parsedRequest.error);
+  }
+
+  const normalizedBarcode = normalizeBarcode(parsedRequest.data.barcode);
+  if (!normalizedBarcode) {
+    throw new ProviderError('invalid_query', 'Barcode must be a valid EAN or UPC.', 'open-food-facts');
+  }
+
+  const cacheKey = makeCacheKey(await getCacheScope(), 'barcode', normalizedBarcode);
+  const cached = readCache(cacheKey, parseBarcodeFoodDetails);
+  if (cached) return cached;
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.functions.invoke('food-catalogue-barcode', {
+    body: { barcode: normalizedBarcode },
+  });
+
+  if (error) {
+    await mapFunctionError(error, 'open-food-facts');
+  }
+
+  const parsed = externalBarcodeFoodDetailsSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new ProviderError('invalid_response', 'Invalid barcode response from provider', 'open-food-facts', parsed.error);
   }
 
   writeCache(cacheKey, parsed.data);

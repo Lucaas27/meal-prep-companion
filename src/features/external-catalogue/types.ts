@@ -46,6 +46,19 @@ export interface ExternalBarcodeFoodDetails extends ExternalFoodDetails {
   completenessStatus: BarcodeProductCompletenessStatus;
 }
 
+export interface ExternalBarcodeLookupRequest {
+  barcode: string;
+}
+
+export type ExternalBarcodeLookupState =
+  | 'idle'
+  | 'looking_up'
+  | 'found'
+  | 'not_found'
+  | 'incomplete'
+  | 'rate_limited'
+  | 'unavailable';
+
 export interface ExternalFoodSearchPage {
   items: ExternalFoodSearchResult[];
   totalHits: number;

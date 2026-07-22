@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+export const barcodeLookupRequestSchema = z.object({
+  barcode: z.string().trim().min(1),
+});
+
 export const externalServingOptionSchema = z.object({
   label: z.string(),
   unit: z.string(),

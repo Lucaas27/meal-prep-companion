@@ -23,5 +23,6 @@ export const queryKeys = {
   externalFood: {
     search: (query: string, page: number, pageSize: number) => ['external-food-search', query, page, pageSize] as const,
     detail: (provider: string, externalId: string) => ['external-food-details', provider, externalId] as const,
+    barcode: (barcode: string) => ['external-food-barcode', barcode] as const,
   },
 } as const;

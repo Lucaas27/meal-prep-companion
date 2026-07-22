@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getSupabaseClient } from '@/infrastructure/supabase/client';
-import { clearExternalFoodCache, getFoodDetails, searchFoods } from './client';
+import { clearExternalFoodCache, getFoodByBarcode, getFoodDetails, searchFoods } from './client';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 vi.mock('@/infrastructure/supabase/client', () => ({
   getSupabaseClient: vi.fn(),
@@ -115,5 +116,69 @@ describe('external catalogue cache', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('looks up a barcode and preserves provider metadata', async () => {
+    invoke.mockResolvedValue({
+      data: {
+        provider: 'open-food-facts',
+        externalId: '0036000291452',
+        barcode: '0036000291452',
+        name: 'Example Product',
+        description: null,
+        brand: 'Example Brand',
+        dataType: 'packaged-food',
+        caloriesPer100g: 250,
+        proteinPer100g: 6,
+        carbohydratesPer100g: 30,
+        fatPer100g: 10,
+        fibrePer100g: null,
+        saltPer100g: 0.4,
+        sodiumPer100g: null,
+        category: 'Snack',
+        servingOptions: [],
+        sourceUrl: 'https://world.openfoodfacts.org/product/0036000291452',
+        retrievedAt: '2026-01-01T00:00:00Z',
+        imageUrl: null,
+        packageQuantityText: '500 g',
+        servingSizeText: '30 g',
+        servingQuantityGrams: 30,
+        completenessStatus: 'complete',
+      },
+      error: null,
+    });
+
+    const result = await getFoodByBarcode({ barcode: '036000291452' });
+
+    expect(result.provider).toBe('open-food-facts');
+    expect(result.barcode).toBe('0036000291452');
+    expect(invoke).toHaveBeenCalledWith('food-catalogue-barcode', {
+      body: { barcode: '0036000291452' },
+    });
+  });
+
+  it('maps structured 404 errors for barcode lookups', async () => {
+    const response = new Response(JSON.stringify({ error: 'not_found', message: 'Barcode product not found.' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    invoke.mockResolvedValue({ data: null, error: new FunctionsHttpError(response) });
+
+    await expect(getFoodByBarcode({ barcode: '036000291452' })).rejects.toMatchObject({ code: 'not_found' });
+  });
+
+  it('maps structured 429 errors for barcode lookups', async () => {
+    const response = new Response(JSON.stringify({ error: 'rate_limited', message: 'Open Food Facts rate limit exceeded.' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    invoke.mockResolvedValue({ data: null, error: new FunctionsHttpError(response) });
+
+    await expect(getFoodByBarcode({ barcode: '036000291452' })).rejects.toMatchObject({ code: 'rate_limited' });
+  });
+
+  it('rejects invalid barcode input before invocation', async () => {
+    await expect(getFoodByBarcode({ barcode: 'bad-code' })).rejects.toMatchObject({ code: 'invalid_query' });
+    expect(invoke).not.toHaveBeenCalled();
   });
 });
