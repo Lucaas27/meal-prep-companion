@@ -107,8 +107,8 @@ begin
 
     select count(*)
     into v_default_count
-    from jsonb_array_elements(p_payload->'approvedConversions') value
-    where coalesce((value->>'isDefault')::boolean, false);
+    from jsonb_array_elements(p_payload->'approvedConversions') as elem
+    where coalesce((elem->>'isDefault')::boolean, false);
 
     if v_default_count > 1 then
       return jsonb_build_object('status', 'validation_error', 'message', 'Only one default conversion is allowed.');
@@ -117,8 +117,8 @@ begin
     if exists (
       select 1
       from (
-        select lower(btrim(value->>'label')) as label
-        from jsonb_array_elements(p_payload->'approvedConversions') value
+        select lower(btrim(elem->>'label')) as label
+        from jsonb_array_elements(p_payload->'approvedConversions') as elem
       ) labels
       where label = ''
     ) then
@@ -128,8 +128,8 @@ begin
     if (
       select count(*)
       from (
-        select distinct lower(btrim(value->>'label')) as label
-        from jsonb_array_elements(p_payload->'approvedConversions') value
+        select distinct lower(btrim(elem->>'label')) as label
+        from jsonb_array_elements(p_payload->'approvedConversions') as elem
       ) labels
     ) <> v_conversion_count then
       return jsonb_build_object('status', 'validation_error', 'message', 'Conversion labels must be unique per ingredient.');
