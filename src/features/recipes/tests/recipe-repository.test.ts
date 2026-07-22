@@ -37,6 +37,27 @@ describe('recipeRepository', () => {
       expect(result[0].name).toBe('Test Recipe');
     });
 
+    it('translates legacy quantityGrams ingredients', () => {
+      localStorage.setItem(storageKeys.recipes, JSON.stringify([
+        {
+          id: 'r1',
+          name: 'Legacy Recipe',
+          portions: 4,
+          ingredients: [
+            { id: 'i1', name: 'Chicken', quantityGrams: 200, caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+          ],
+          createdAt: 1000,
+          updatedAt: 1000,
+          tags: [],
+          favourite: false,
+          notes: '',
+        },
+      ]));
+
+      const result = recipeRepository.getAll();
+      expect(result[0].ingredients[0]).toMatchObject({ weight: 200, unit: 'g', unitConversionId: null });
+    });
+
     it('skips malformed JSON', () => {
       localStorage.setItem(storageKeys.recipes, 'not-json');
       expect(recipeRepository.getAll()).toEqual([]);

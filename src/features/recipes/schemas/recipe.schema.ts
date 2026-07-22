@@ -1,6 +1,19 @@
 import { z } from 'zod';
 
-export const ingredientSchema = z.object({
+const ingredientInputSchema = z.preprocess((value) => {
+  if (!value || typeof value !== 'object') return value;
+  const ingredient = value as Record<string, unknown>;
+  if ('weight' in ingredient) return value;
+  if (typeof ingredient.quantityGrams === 'number') {
+    return {
+      ...ingredient,
+      weight: ingredient.quantityGrams,
+      unit: 'g',
+      unitConversionId: null,
+    };
+  }
+  return value;
+}, z.object({
   id: z.string(),
   name: z.string(),
   weight: z.number().min(0),
@@ -10,7 +23,9 @@ export const ingredientSchema = z.object({
   proteinPer100g: z.number().min(0),
   carbsPer100g: z.number().min(0).default(0),
   fatPer100g: z.number().min(0).default(0),
-});
+}));
+
+export const ingredientSchema = ingredientInputSchema;
 
 export const recipeSchema = z.object({
   id: z.string(),

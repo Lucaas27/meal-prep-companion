@@ -126,8 +126,8 @@ export async function runMigration(): Promise<MigrationCounts> {
   return counts;
 }
 
-export function downloadBackup() {
-  exportBackup();
+export async function downloadBackup() {
+  await exportBackup();
 }
 
 export function clearLocalData() {
