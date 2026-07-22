@@ -1,4 +1,4 @@
-import { calcBatchTotals, calcPerPortion } from '../utils/calculations';
+import { getRecipePerPortion } from '../utils/recipe-nutrition';
 import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import {
   Table,
@@ -16,6 +16,7 @@ import type { RecipeViewProps } from './RecipeGridView';
 
 export function RecipeListView({
   recipes,
+  flatConversions,
   onEdit,
   onDuplicate,
   onDelete,
@@ -56,11 +57,7 @@ export function RecipeListView({
         </TableHeader>
         <TableBody>
           {recipes.map((recipe) => {
-            const valid = recipe.ingredients.filter(
-              (i) => i.weight > 0,
-            );
-            const totals = calcBatchTotals(valid);
-            const per = recipe.portions > 0 ? calcPerPortion(totals, recipe.portions) : null;
+            const per = getRecipePerPortion(recipe, flatConversions);
 
             return (
               <TableRow

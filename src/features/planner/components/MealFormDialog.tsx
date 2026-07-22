@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { MealPlanEntry } from '../schemas/meal-plan.schema';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
-import { calcBatchTotals, calcPerPortion } from '@/features/recipes/utils/calculations';
+import { getRecipePerPortion } from '@/features/recipes/utils/recipe-nutrition';
 import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { makeId } from '@/shared/lib/ids';
 import {
@@ -47,6 +47,7 @@ interface Props {
   defaultDate?: string;
   defaultSlot?: string;
   recipes: Recipe[];
+  flatConversions: Map<string, number>;
   onSave: (entry: MealPlanEntry) => void;
 }
 
@@ -57,6 +58,7 @@ export function MealFormDialog({
   defaultDate,
   defaultSlot,
   recipes,
+  flatConversions,
   onSave,
 }: Props) {
   const isEditing = entry !== null;
@@ -72,10 +74,8 @@ export function MealFormDialog({
 
   const per = useMemo(() => {
     if (!selectedRecipe) return null;
-    const valid = selectedRecipe.ingredients.filter((i) => i.weight > 0);
-    const totals = calcBatchTotals(valid);
-    return selectedRecipe.portions > 0 ? calcPerPortion(totals, selectedRecipe.portions) : null;
-  }, [selectedRecipe]);
+    return getRecipePerPortion(selectedRecipe, flatConversions);
+  }, [selectedRecipe, flatConversions]);
 
   const canSave = recipeId && plannedDate && Number(servings) > 0;
 
@@ -133,7 +133,7 @@ export function MealFormDialog({
                           <Check className={cn('mr-2 h-4 w-4', r.id === recipeId ? 'opacity-100' : 'opacity-0')} />
                           <span className="flex-1">{r.name}</span>
                           <span className="text-xs text-muted-foreground">
-                            {formatCalories(getRecipeCalories(r))} kcal
+                            {formatCalories(getRecipeCalories(r, flatConversions))} kcal
                           </span>
                         </CommandItem>
                       ))}
@@ -193,8 +193,6 @@ export function MealFormDialog({
   );
 }
 
-function getRecipeCalories(recipe: Recipe): number {
-  const valid = recipe.ingredients.filter((i) => i.weight > 0);
-  const totals = calcBatchTotals(valid);
-  return recipe.portions > 0 ? totals.totalCalories / recipe.portions : 0;
+function getRecipeCalories(recipe: Recipe, flatConversions: Map<string, number>): number {
+  return getRecipePerPortion(recipe, flatConversions)?.caloriesPerPortion ?? 0;
 }

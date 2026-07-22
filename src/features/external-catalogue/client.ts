@@ -51,8 +51,34 @@ function parseFoodDetails(value: unknown): ExternalFoodDetails | null {
   return parsed.success ? parsed.data : null;
 }
 
+async function getCacheScope() {
+  const supabase = getSupabaseClient();
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? 'anonymous';
+}
+
+function makeCacheKey(scope: string, kind: 'search' | 'details', ...parts: string[]) {
+  return `${CACHE_PREFIX}:${scope}:${kind}:${parts.join(':')}`;
+}
+
+export function clearExternalFoodCache() {
+  if (typeof localStorage === 'undefined') return;
+
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(CACHE_PREFIX)) {
+      keysToRemove.push(key);
+    }
+  }
+
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key);
+  }
+}
+
 export async function searchFoods(query: string, page = 1, pageSize = 20): Promise<ExternalFoodSearchPage> {
-  const cacheKey = `${CACHE_PREFIX}:search:${query}:${page}:${pageSize}`;
+  const cacheKey = makeCacheKey(await getCacheScope(), 'search', query, String(page), String(pageSize));
   const cached = readCache(cacheKey, parseSearchPage);
   if (cached) return cached;
 
@@ -78,7 +104,7 @@ export async function searchFoods(query: string, page = 1, pageSize = 20): Promi
 }
 
 export async function getFoodDetails(provider: string, externalId: string): Promise<ExternalFoodDetails> {
-  const cacheKey = `${CACHE_PREFIX}:details:${provider}:${externalId}`;
+  const cacheKey = makeCacheKey(await getCacheScope(), 'details', provider, externalId);
   const cached = readCache(cacheKey, parseFoodDetails);
   if (cached) return cached;
 

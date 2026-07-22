@@ -1,6 +1,7 @@
 import type { MealPlanEntry } from '../schemas/meal-plan.schema';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
-import { calcBatchTotals, calcPerPortion, type PerPortion } from '@/features/recipes/utils/calculations';
+import type { PerPortion } from '@/features/recipes/utils/calculations';
+import { getRecipePerPortion } from '@/features/recipes/utils/recipe-nutrition';
 
 export interface DayNutrition {
   date: string;
@@ -21,16 +22,14 @@ export interface WeekNutrition {
   missingCount: number;
 }
 
-function getPerServing(recipe: Recipe): PerPortion | null {
-  const valid = recipe.ingredients.filter((i) => i.weight > 0);
-  if (valid.length === 0 || recipe.portions <= 0) return null;
-  const totals = calcBatchTotals(valid);
-  return calcPerPortion(totals, recipe.portions);
+function getPerServing(recipe: Recipe, unitConversions?: Map<string, number>): PerPortion | null {
+  return getRecipePerPortion(recipe, unitConversions);
 }
 
 export function calculateDayNutrition(
   entries: MealPlanEntry[],
   recipeMap: Map<string, Recipe>,
+  unitConversions?: Map<string, number>,
 ): DayNutrition {
   let calories = 0;
   let protein = 0;
@@ -41,7 +40,7 @@ export function calculateDayNutrition(
   for (const entry of entries) {
     const recipe = recipeMap.get(entry.recipeId);
     if (!recipe) { missingCount++; continue; }
-    const per = getPerServing(recipe);
+    const per = getPerServing(recipe, unitConversions);
     if (!per) { missingCount++; continue; }
     calories += per.caloriesPerPortion * entry.servings;
     protein += per.proteinPerPortion * entry.servings;
@@ -63,6 +62,7 @@ export function calculateDayNutrition(
 export function calculateWeekNutrition(
   entries: MealPlanEntry[],
   recipeMap: Map<string, Recipe>,
+  unitConversions?: Map<string, number>,
 ): WeekNutrition {
   let calories = 0;
   let protein = 0;
@@ -73,7 +73,7 @@ export function calculateWeekNutrition(
   for (const entry of entries) {
     const recipe = recipeMap.get(entry.recipeId);
     if (!recipe) { missingCount++; continue; }
-    const per = getPerServing(recipe);
+    const per = getPerServing(recipe, unitConversions);
     if (!per) { missingCount++; continue; }
     calories += per.caloriesPerPortion * entry.servings;
     protein += per.proteinPerPortion * entry.servings;

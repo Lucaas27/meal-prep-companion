@@ -76,6 +76,29 @@ describe('calculateDayNutrition', () => {
     expect(result.missingCount).toBe(1);
     expect(result.calories).toBe(0);
   });
+
+  it('uses ingredient conversion maps for unit-based recipe servings', () => {
+    const convertedRecipe = makeRecipe({
+      ingredients: [
+        { id: 'i1', name: 'Chicken', weight: 2, unit: 'piece', unitConversionId: 'conv-1', caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+      ],
+    });
+    const result = calculateDayNutrition([makeEntry()], makeRecipeMap([convertedRecipe]), new Map([['conv-1', 120]]));
+    expect(result.calories).toBeCloseTo(99, 1);
+    expect(result.protein).toBeCloseTo(18.6, 1);
+    expect(result.isComplete).toBe(true);
+  });
+
+  it('marks incomplete when a referenced conversion is unavailable', () => {
+    const convertedRecipe = makeRecipe({
+      ingredients: [
+        { id: 'i1', name: 'Chicken', weight: 2, unit: 'piece', unitConversionId: 'missing', caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+      ],
+    });
+    const result = calculateDayNutrition([makeEntry()], makeRecipeMap([convertedRecipe]));
+    expect(result.isComplete).toBe(false);
+    expect(result.missingCount).toBe(1);
+  });
 });
 
 describe('calculateWeekNutrition', () => {
@@ -89,6 +112,18 @@ describe('calculateWeekNutrition', () => {
     ];
     const result = calculateWeekNutrition(entries, map);
     expect(result.calories).toBeCloseTo(520, 1);
+  });
+
+  it('propagates unit-based recipe totals into weekly totals', () => {
+    const convertedRecipe = makeRecipe({
+      ingredients: [
+        { id: 'i1', name: 'Chicken', weight: 2, unit: 'piece', unitConversionId: 'conv-1', caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+      ],
+    });
+    const entries = [makeEntry({ id: 'e1', servings: 2 })];
+    const result = calculateWeekNutrition(entries, makeRecipeMap([convertedRecipe]), new Map([['conv-1', 120]]));
+    expect(result.calories).toBeCloseTo(198, 1);
+    expect(result.protein).toBeCloseTo(37.2, 1);
   });
 });
 

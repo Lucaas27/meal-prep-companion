@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useRecipes } from '@/features/recipes/hooks';
+import { useConversionsForIngredients } from '@/features/ingredients/conversions/use-unit-conversions';
 import {
   useMealPlanEntries,
   useCreateMealPlanEntry,
@@ -9,7 +10,7 @@ import {
   useMoveMealPlanEntry,
 } from '../hooks/use-meal-plan';
 import { getMonday, getWeekDays, formatDate, addWeeks, isSameDay } from '@/shared/utils/date';
-import { calcBatchTotals, calcPerPortion } from '@/features/recipes/utils/calculations';
+import { getRecipePerPortion, flattenUnitConversions } from '@/features/recipes/utils/recipe-nutrition';
 import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { makeId } from '@/shared/lib/ids';
 import { calculateWeekNutrition, calculateDayAverages } from '../utils/nutrition-summary';
@@ -56,10 +57,8 @@ const SLOT_LABELS: Record<string, string> = {
 };
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-function getRecipeCalories(recipe: Recipe): number {
-  const valid = recipe.ingredients.filter((i) => i.weight > 0);
-  const totals = calcBatchTotals(valid);
-  return recipe.portions > 0 ? totals.totalCalories / recipe.portions : 0;
+function getRecipeCalories(recipe: Recipe, flatConversions: Map<string, number>): number {
+  return getRecipePerPortion(recipe, flatConversions)?.caloriesPerPortion ?? 0;
 }
 
 export default function PlannerPage() {
@@ -101,6 +100,9 @@ export default function PlannerPage() {
     for (const r of recipes) map.set(r.id, r);
     return map;
   }, [recipes]);
+  const ingredientIds = useMemo(() => recipes.flatMap((recipe) => recipe.ingredients.map((ingredient) => ingredient.id)), [recipes]);
+  const { data: conversionsByIngredient = new Map() } = useConversionsForIngredients(ingredientIds);
+  const flatConversions = useMemo(() => flattenUnitConversions(conversionsByIngredient), [conversionsByIngredient]);
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Map<string, MealPlanEntry[]>>();
@@ -198,22 +200,22 @@ export default function PlannerPage() {
       const key = formatDate(day);
       const dayEntries = entries.filter((e) => e.plannedDate === key);
       let kcal = 0;
-      for (const e of dayEntries) {
-        const recipe = recipeMap.get(e.recipeId);
-        if (recipe) {
-          kcal += getRecipeCalories(recipe) * e.servings;
+        for (const e of dayEntries) {
+          const recipe = recipeMap.get(e.recipeId);
+          if (recipe) {
+            kcal += getRecipeCalories(recipe, flatConversions) * e.servings;
+          }
         }
-      }
       totals.set(key, { kcal });
     }
     return totals;
-  }, [entries, recipeMap, days]);
+  }, [entries, recipeMap, days, flatConversions]);
 
   const missingRecipes = entries.filter((e) => !recipeMap.has(e.recipeId));
 
   const weekNutrition = useMemo(
-    () => calculateWeekNutrition(entries, recipeMap),
-    [entries, recipeMap],
+    () => calculateWeekNutrition(entries, recipeMap, flatConversions),
+    [entries, recipeMap, flatConversions],
   );
 
   const mealDays = useMemo(
@@ -231,9 +233,7 @@ export default function PlannerPage() {
     if (!recipe) return (
       <div key={e.id} className="text-[10px] text-destructive py-1">Unknown recipe</div>
     );
-    const per = recipe.portions > 0
-      ? calcPerPortion(calcBatchTotals(recipe.ingredients.filter((i) => i.weight > 0)), recipe.portions)
-      : null;
+    const per = getRecipePerPortion(recipe, flatConversions);
 
     return (
       <div key={e.id} className="rounded-lg border bg-card p-3 cursor-pointer" onClick={() => handleEdit(e)}>
@@ -407,6 +407,7 @@ export default function PlannerPage() {
         defaultDate={defaultDate}
         defaultSlot={defaultSlot}
         recipes={recipes}
+        flatConversions={flatConversions}
         onSave={handleSave}
       />
 

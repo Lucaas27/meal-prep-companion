@@ -1,5 +1,5 @@
 import type { Recipe } from '../schemas/recipe.schema';
-import { calcBatchTotals, calcPerPortion } from '../utils/calculations';
+import { getRecipePerPortion } from '../utils/recipe-nutrition';
 import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Star, Pencil, Copy, Trash2, Square, CheckSquare } from 'lucide-react';
 
 export interface RecipeViewProps {
   recipes: Recipe[];
+  flatConversions: Map<string, number>;
   onEdit: (recipe: Recipe) => void;
   onDuplicate: (recipe: Recipe) => void;
   onDelete: (id: string) => void;
@@ -21,6 +22,7 @@ export interface RecipeViewProps {
 
 export function RecipeGridView({
   recipes,
+  flatConversions,
   onEdit,
   onDuplicate,
   onDelete,
@@ -32,11 +34,7 @@ export function RecipeGridView({
   return (
     <div className="space-y-3">
       {recipes.map((recipe) => {
-        const valid = recipe.ingredients.filter(
-          (i) => i.weight > 0,
-        );
-        const totals = calcBatchTotals(valid);
-        const per = recipe.portions > 0 ? calcPerPortion(totals, recipe.portions) : null;
+        const per = getRecipePerPortion(recipe, flatConversions);
 
         return (
           <Card

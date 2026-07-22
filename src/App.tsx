@@ -26,6 +26,7 @@ import { ProtectedRoute } from '@/app/components/ProtectedRoute';
 import { RootRoute } from '@/app/components/RootRoute';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { MigrationPrompt } from '@/features/migration/components/MigrationPrompt';
+import { queryKeys } from '@/shared/constants/query-keys';
 
 export default function App() {
   const { data: recipes = [] } = useRecipes();
@@ -57,11 +58,11 @@ export default function App() {
   const queryClient = useQueryClient();
 
   const refreshRecipes = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['recipes'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
   }, [queryClient]);
 
   const refreshIngredients = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.ingredients.all });
   }, [queryClient]);
 
   const handleNew = useCallback(() => {

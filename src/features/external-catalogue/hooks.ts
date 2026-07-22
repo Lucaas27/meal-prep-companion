@@ -1,17 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { searchFoods, getFoodDetails } from './client';
-
-const KEYS = {
-  search: ['external-food-search'] as const,
-  details: ['external-food-details'] as const,
-};
+import { queryKeys } from '@/shared/constants/query-keys';
 
 export function useFoodSearch(query: string, page = 1, pageSize = 20) {
   const trimmed = query.trim();
   const enabled = trimmed.length >= 2;
 
   return useQuery({
-    queryKey: [...KEYS.search, trimmed, page, pageSize],
+    queryKey: queryKeys.externalFood.search(trimmed, page, pageSize),
     queryFn: () => searchFoods(trimmed, page, pageSize),
     enabled,
     staleTime: 5 * 60 * 1000,
@@ -26,7 +22,7 @@ export function useFoodSearch(query: string, page = 1, pageSize = 20) {
 
 export function useFoodDetails(provider: string, externalId: string) {
   return useQuery({
-    queryKey: [...KEYS.details, provider, externalId],
+    queryKey: queryKeys.externalFood.detail(provider, externalId),
     queryFn: () => getFoodDetails(provider, externalId),
     enabled: !!provider && !!externalId,
     staleTime: 10 * 60 * 1000,

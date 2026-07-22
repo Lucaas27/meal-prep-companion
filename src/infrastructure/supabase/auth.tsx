@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Session } from '@supabase/supabase-js';
 import { getSupabaseClientOrNull } from './client';
 import { AuthContext } from './auth-context';
+import { clearExternalFoodCache } from '@/features/external-catalogue/client';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = getSupabaseClientOrNull();
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       if (!newSession) {
         queryClient.clear();
+        clearExternalFoodCache();
       }
     });
 

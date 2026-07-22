@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { Recipe } from '../schemas/recipe.schema';
-import { calcBatchTotals } from '../utils/calculations';
 import { round1dp } from '@/shared/utils/format';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,8 @@ import { RecipeGridView } from './RecipeGridView';
 import { RecipeListView } from './RecipeListView';
 import { Pagination } from '@/shared/components/Pagination';
 import { useConfirm } from '@/shared/components/ConfirmDialog';
+import { useConversionsForIngredients } from '@/features/ingredients/conversions/use-unit-conversions';
+import { flattenUnitConversions, getRecipePerPortion } from '../utils/recipe-nutrition';
 
 function loadPageSize(): number {
   const saved = localStorage.getItem(PAGE_SIZE_KEY);
@@ -73,7 +74,7 @@ function saveView(value: ViewMode) {
   localStorage.setItem(VIEW_KEY, value);
 }
 
-function sortRecipes(recipes: Recipe[], sort: SortValue): Recipe[] {
+function sortRecipes(recipes: Recipe[], sort: SortValue, flatConversions: Map<string, number>): Recipe[] {
   const sorted = [...recipes];
   switch (sort) {
     case 'recent':
@@ -85,28 +86,24 @@ function sortRecipes(recipes: Recipe[], sort: SortValue): Recipe[] {
     case 'name-desc':
       return sorted.sort((a, b) => b.name.localeCompare(a.name));
     case 'calories-desc':
-      return sorted.sort((a, b) => getCalories(b) - getCalories(a));
+      return sorted.sort((a, b) => getCalories(b, flatConversions) - getCalories(a, flatConversions));
     case 'calories-asc':
-      return sorted.sort((a, b) => getCalories(a) - getCalories(b));
+      return sorted.sort((a, b) => getCalories(a, flatConversions) - getCalories(b, flatConversions));
     case 'protein-desc':
-      return sorted.sort((a, b) => getProtein(b) - getProtein(a));
+      return sorted.sort((a, b) => getProtein(b, flatConversions) - getProtein(a, flatConversions));
     case 'protein-asc':
-      return sorted.sort((a, b) => getProtein(a) - getProtein(b));
+      return sorted.sort((a, b) => getProtein(a, flatConversions) - getProtein(b, flatConversions));
     case 'favourites':
       return sorted.sort((a, b) => (b.favourite ? 1 : 0) - (a.favourite ? 1 : 0));
   }
 }
 
-function getCalories(recipe: Recipe): number {
-  const valid = recipe.ingredients.filter((i) => i.weight > 0);
-  const totals = calcBatchTotals(valid);
-  return recipe.portions > 0 ? totals.totalCalories / recipe.portions : 0;
+function getCalories(recipe: Recipe, flatConversions: Map<string, number>): number {
+  return getRecipePerPortion(recipe, flatConversions)?.caloriesPerPortion ?? 0;
 }
 
-function getProtein(recipe: Recipe): number {
-  const valid = recipe.ingredients.filter((i) => i.weight > 0);
-  const totals = calcBatchTotals(valid);
-  return recipe.portions > 0 ? totals.totalProtein / recipe.portions : 0;
+function getProtein(recipe: Recipe, flatConversions: Map<string, number>): number {
+  return getRecipePerPortion(recipe, flatConversions)?.proteinPerPortion ?? 0;
 }
 
 interface Props {
@@ -137,6 +134,9 @@ export default function RecipeLibrary({
   const [pageSize, setPageSize] = useState(loadPageSize);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { confirm, dialog } = useConfirm();
+  const ingredientIds = useMemo(() => recipes.flatMap((recipe) => recipe.ingredients.map((ingredient) => ingredient.id)), [recipes]);
+  const { data: conversionsByIngredient = new Map() } = useConversionsForIngredients(ingredientIds);
+  const flatConversions = useMemo(() => flattenUnitConversions(conversionsByIngredient), [conversionsByIngredient]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -176,7 +176,7 @@ export default function RecipeLibrary({
     return list;
   }, [recipes, search, sort]);
 
-  const sorted = useMemo(() => sortRecipes(filtered, sort), [filtered, sort]);
+  const sorted = useMemo(() => sortRecipes(filtered, sort, flatConversions), [filtered, sort, flatConversions]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const paged = useMemo(
@@ -194,21 +194,21 @@ export default function RecipeLibrary({
     }
   };
 
-  const viewProps = { onEdit, onDuplicate, onDelete, onToggleFavourite, selectedIds, onToggleSelect: toggleSelect, allSelected, toggleSelectAll };
+  const viewProps = { onEdit, onDuplicate, onDelete, onToggleFavourite, selectedIds, onToggleSelect: toggleSelect, allSelected, toggleSelectAll, flatConversions };
 
   const stats = useMemo(() => {
     const total = filtered.length;
     const favs = filtered.filter((r) => r.favourite).length;
     const avgCal =
       total > 0
-        ? round1dp(filtered.reduce((sum, r) => sum + getCalories(r), 0) / total)
+        ? round1dp(filtered.reduce((sum, r) => sum + getCalories(r, flatConversions), 0) / total)
         : 0;
     const avgProtein =
       total > 0
-        ? round1dp(filtered.reduce((sum, r) => sum + getProtein(r), 0) / total)
+        ? round1dp(filtered.reduce((sum, r) => sum + getProtein(r, flatConversions), 0) / total)
         : 0;
     return { total, favs, avgCal, avgProtein };
-  }, [filtered]);
+  }, [filtered, flatConversions]);
 
   const safePage = Math.min(page, totalPages);
 
