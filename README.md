@@ -86,6 +86,75 @@ The details function also requires an authenticated user and returns provider-ne
 
 The barcode function requires an authenticated user, checks the local barcode cache first, and falls back to Open Food Facts product-by-barcode lookup.
 
+### Barcode Deployment
+
+Apply database migrations:
+
+```bash
+supabase db push --linked
+```
+
+Deploy the barcode function:
+
+```bash
+supabase functions deploy food-catalogue-barcode
+```
+
+Recommended related function deploys for the full external catalogue feature:
+
+```bash
+supabase functions deploy food-catalogue-search
+supabase functions deploy food-catalogue-details
+supabase functions deploy food-catalogue-barcode
+```
+
+### Barcode Smoke Tests
+
+Serve functions locally:
+
+```bash
+npx supabase functions serve --env-file .env
+```
+
+Set the Open Food Facts User-Agent locally before serving if needed:
+
+```bash
+export OPEN_FOOD_FACTS_USER_AGENT="Meal Prep Companion/1.3 (hello@example.com)"
+```
+
+Known product barcode smoke test:
+
+```bash
+curl -X POST "http://127.0.0.1:54321/functions/v1/food-catalogue-barcode" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "apikey: <publishable_or_anon_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"barcode":"036000291452"}'
+```
+
+Missing product barcode smoke test:
+
+```bash
+curl -X POST "http://127.0.0.1:54321/functions/v1/food-catalogue-barcode" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "apikey: <publishable_or_anon_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"barcode":"000000000000"}'
+```
+
+Cache-hit verification:
+
+1. Call the same known barcode twice.
+2. Verify the second request logs `cacheOutcome: hit`.
+3. Verify provider fetch duration disappears from the second request path and the result returns from cache.
+
+React Query retry verification:
+
+1. Trigger a 404 barcode response.
+2. Confirm `useFoodByBarcode` does not retry.
+3. Trigger a 429 response.
+4. Confirm `useFoodByBarcode` does not retry.
+
 ### USDA Attribution
 
 Imported food search and nutrition data comes from USDA FoodData Central.
@@ -98,9 +167,17 @@ Open Food Facts entries may be incomplete or community-contributed, so barcode r
 
 Open Food Facts data and product images are subject to Open Food Facts licensing terms. If you ship this feature publicly, keep visible attribution in the product review flow and review the current Open Food Facts data and image licence obligations before production release.
 
+Open Food Facts licence reminder:
+
+- product data: Open Database Licence (ODbL)
+- product images: separate image licences may apply per image
+- keep attribution visible wherever barcode product data is shown to end users
+- do not assume imported barcode data is authoritative or complete
+
 ### Production Camera Notes
 
 - Barcode scanning requires HTTPS in production.
+- Do not ship barcode scanning over plain HTTP except on approved localhost development origins.
 - Camera access must be tested on real mobile browsers, especially iOS Safari and Android Chrome.
 - Test permission denied, no-camera, and camera-in-use cases on real devices before release.
 - Verify rear/environment camera selection on phones and tablets.
