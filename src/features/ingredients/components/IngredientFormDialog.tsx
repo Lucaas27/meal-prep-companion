@@ -101,8 +101,8 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
           <DialogDescription>Nutrition values per 100g.</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh] px-0.5">
-          <div className="space-y-4 pr-4">
+        <ScrollArea className="max-h-[70vh]">
+          <div className="space-y-4 px-4">
             <div className="space-y-1.5">
               <Label htmlFor="ing-name" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Name</Label>
               <Input id="ing-name" value={name} onChange={(e) => { setName(e.target.value); setNameError(''); }} placeholder="Chicken Breast" />

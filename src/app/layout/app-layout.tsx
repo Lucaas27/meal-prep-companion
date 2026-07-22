@@ -17,23 +17,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-svh flex flex-col md:flex-row">
       {user && (
-      <aside className="hidden md:flex flex-col w-[240px] border-r bg-muted/30 shrink-0">
-        <div className="px-5 pt-6 pb-4">
-          <h1 className="text-lg font-semibold tracking-tight">Meal Prep Companion</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Batch cooking with precision nutrition</p>
+      <aside className="hidden md:flex flex-col w-[240px] border-r bg-card shrink-0 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.06] to-transparent pointer-events-none" />
+        <div className="px-5 pt-6 pb-5 border-b border-border/50 relative">
+          <h1 className="text-lg font-display font-semibold tracking-tight text-primary">Meal Prep Companion</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 font-body">Batch cooking with precision nutrition</p>
         </div>
 
-        <nav className="flex-1 px-2 space-y-0.5">
+        <nav className="flex-1 px-2.5 py-3 space-y-1">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150 font-body',
                   isActive
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                 )
               }
             >
@@ -43,14 +44,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t flex items-center justify-between">
+        <div className="px-5 py-4 border-t border-border/50 flex items-center justify-between">
           {user && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onClick={signOut}
                 >
                   <LogOut className="h-4 w-4" />
@@ -64,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               >
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -78,10 +79,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="md:hidden text-center pt-6 pb-2 relative">
-          <h1 className="text-xl font-bold tracking-tight">Meal Prep Companion</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Batch cooking with precision nutrition</p>
+      <div className="flex-1 flex flex-col min-w-0 font-body">
+        <header className="md:hidden text-center pt-6 pb-2 relative border-b border-border/50">
+          <h1 className="text-xl font-display font-semibold tracking-tight text-primary">Meal Prep Companion</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 font-body">Batch cooking with precision nutrition</p>
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -105,7 +106,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
 
         {user && (
-        <nav className="md:hidden fixed bottom-0 inset-x-0 border-t bg-background flex items-center justify-around pb-safe">
+        <nav className="md:hidden fixed bottom-0 inset-x-0 border-t bg-card flex items-center justify-around pb-safe shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
@@ -114,7 +115,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 cn(
                   'flex flex-col items-center gap-0.5 py-2 px-1 text-[11px] font-medium transition-colors min-w-0',
                   isActive
-                    ? 'text-foreground'
+                    ? 'text-primary'
                     : 'text-muted-foreground',
                 )
               }

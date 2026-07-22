@@ -45,13 +45,10 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: [
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"Segoe UI"',
-          'Roboto',
-          'sans-serif',
-        ],
+        display: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
     },
   },
