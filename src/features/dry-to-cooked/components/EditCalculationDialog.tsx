@@ -65,11 +65,11 @@ export function EditCalculationDialog({ open, onOpenChange, calculation, onSave 
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="ec-dry" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Dry weight (g)</Label>
+              <Label htmlFor="ec-dry" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Dry weight (g)</Label>
               <Input id="ec-dry" type="number" value={dryWeight} onChange={(e) => setDryWeight(e.target.value)} min="0" step="1" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ec-cooked" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Cooked weight (g)</Label>
+              <Label htmlFor="ec-cooked" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Cooked weight (g)</Label>
               <Input id="ec-cooked" type="number" value={cookedWeight} onChange={(e) => setCookedWeight(e.target.value)} min="0" step="1" />
             </div>
           </div>

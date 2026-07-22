@@ -171,11 +171,11 @@ export default function DryCookedCalculator() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="dc-dry-weight" className="text-[13px]">Dry weight (g)</Label>
+              <Label htmlFor="dc-dry-weight" className="text-[13px] whitespace-nowrap">Dry weight (g)</Label>
               <Input id="dc-dry-weight" type="number" value={inputs.dryWeight || ''} onChange={(e) => handleChange('dryWeight', e.target.value)} min="0" step="1" placeholder="e.g. 200" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dc-cooked" className="text-[13px]">Cooked weight (g)</Label>
+              <Label htmlFor="dc-cooked" className="text-[13px] whitespace-nowrap">Cooked weight (g)</Label>
               <Input id="dc-cooked" type="number" value={inputs.cookedWeight || ''} onChange={(e) => handleChange('cookedWeight', e.target.value)} min="0" step="1" placeholder="e.g. 460" />
             </div>
             <div className="space-y-1.5">

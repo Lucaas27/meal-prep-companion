@@ -80,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <div className="flex-1 flex flex-col min-w-0 font-body">
-        <header className="md:hidden text-center pt-6 pb-2 relative border-b border-border/50">
+        <header className="md:hidden text-center pt-6 pb-2 mb-4 relative border-b border-border/50">
           <h1 className="text-xl font-display font-semibold tracking-tight text-primary">Meal Prep Companion</h1>
           <p className="text-xs text-muted-foreground mt-0.5 font-body">Batch cooking with precision nutrition</p>
 
