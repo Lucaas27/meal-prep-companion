@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
+import type { StoredIngredient } from '@/features/ingredients/schemas/ingredient.schema';
 import {
   useRecipes,
   useCreateRecipe,
@@ -13,7 +14,7 @@ import { AppShell } from '@/app/layout/app-layout';
 import { toast } from 'sonner';
 import { useConfirm } from '@/shared/components/ConfirmDialog';
 import RecipeLibrary from '@/features/recipes/components/RecipeLibrary';
-import RecipeSheet from '@/features/recipes/components/RecipeSheet';
+import RecipeEditorPage from '@/features/recipes/components/RecipeSheet';
 import DryCookedCalculator from '@/features/dry-to-cooked/components/DryCookedCalculator';
 import IngredientCatalogue from '@/features/ingredients/components/IngredientCatalogue';
 import SettingsPage from '@/features/settings/pages/settings-page';
@@ -51,30 +52,27 @@ export default function App() {
   const saveIngredient = useCreateIngredient();
   const deleteIngredient = useDeleteIngredient();
 
-  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleNew = useCallback(() => {
-    setEditingRecipe(null);
-    setSheetOpen(true);
-  }, []);
+    navigate('/recipes/new');
+  }, [navigate]);
 
   const handleEdit = useCallback((recipe: Recipe) => {
-    setEditingRecipe(recipe);
-    setSheetOpen(true);
-  }, []);
+    navigate(`/recipes/${recipe.id}/edit`);
+  }, [navigate]);
 
   const handleSave = useCallback(
     (recipe: Recipe) => {
       saveRecipe.mutate(recipe, {
         onSuccess: () => {
-          toast.success(editingRecipe ? 'Recipe updated!' : 'Recipe saved!');
-          setSheetOpen(false);
+          toast.success('Recipe saved!');
+          navigate('/recipes');
         },
         onError: (err) => toast.error(String(err)),
       });
     },
-    [saveRecipe, editingRecipe],
+    [saveRecipe, navigate],
   );
 
   const handleToggleFavourite = useCallback(
@@ -160,6 +158,8 @@ export default function App() {
           }
         />
         <Route path="/planner" element={<ProtectedRoute><PlannerPage /></ProtectedRoute>} />
+        <Route path="/recipes/new" element={<ProtectedRoute><RecipeEditorPage recipe={null} onSave={handleSave} storedIngredients={storedIngredients} /></ProtectedRoute>} />
+        <Route path="/recipes/:id/edit" element={<ProtectedRoute><EditRecipeWrapper recipes={recipes} onSave={handleSave} storedIngredients={storedIngredients} /></ProtectedRoute>} />
         <Route path="/calculator" element={<ProtectedRoute><DryCookedCalculator /></ProtectedRoute>} />
         <Route
           path="/ingredients"
@@ -177,15 +177,13 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </ErrorBoundary>
-
-      <RecipeSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        recipe={editingRecipe}
-        onSave={handleSave}
-        storedIngredients={storedIngredients}
-      />
       {dialog}
     </AppShell>
   );
+}
+
+function EditRecipeWrapper({ recipes, onSave, storedIngredients }: { recipes: Recipe[]; onSave: (r: Recipe) => void; storedIngredients: StoredIngredient[] }) {
+  const { id } = useParams();
+  const recipe = recipes.find((r) => r.id === id) ?? null;
+  return <RecipeEditorPage recipe={recipe} onSave={onSave} storedIngredients={storedIngredients} />;
 }

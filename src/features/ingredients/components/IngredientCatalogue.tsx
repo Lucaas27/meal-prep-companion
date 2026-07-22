@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { Search, Plus, Trash2, Pencil, Carrot, Database } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
-import { normaliseName } from '@/shared/utils/format';
+import { normaliseName, formatNutrient, formatCalories } from '@/shared/utils/format';
 import { SOURCE_LABELS } from '../schemas/ingredient.schema';
 import { ExternalFoodSearchDialog } from '@/features/external-catalogue/components/ExternalFoodSearchDialog';
 import { useConfirm } from '@/shared/components/ConfirmDialog';
@@ -240,7 +240,8 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
               return (
                 <div
                   key={ing.id}
-                  className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/30"
+                  className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/30 cursor-pointer"
+                  onClick={() => handleEdit(ing)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
@@ -266,7 +267,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(ing)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEdit(ing); }}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
@@ -278,7 +279,7 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleDelete(ing)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(ing); }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

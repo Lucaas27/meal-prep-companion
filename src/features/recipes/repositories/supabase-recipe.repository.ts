@@ -2,6 +2,7 @@ import type { Recipe } from '../schemas/recipe.schema';
 import { recipeSchema } from '../schemas/recipe.schema';
 import { getSupabaseClient } from '@/infrastructure/supabase/client';
 import { mapRecipeRows, recipeToRow } from './recipe-mapper';
+import { ingredientToRow } from '@/features/ingredients/repositories/ingredient-mapper';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cast(row: unknown): any {
@@ -66,6 +67,32 @@ export const supabaseRecipeRepository = {
     await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipe.id);
 
     if (recipe.ingredients.length > 0) {
+      // directly upsert ingredients to satisfy FK constraint, bypass repository getById which uses .single()
+      for (const ing of recipe.ingredients) {
+        if (ing.id) {
+          const { count } = await supabase.from('ingredients').select('id', { count: 'exact', head: true }).eq('id', ing.id);
+          if (!count) {
+            const row = ingredientToRow({
+              id: ing.id,
+              name: ing.name,
+              caloriesPer100g: ing.caloriesPer100g,
+              proteinPer100g: ing.proteinPer100g,
+              carbsPer100g: ing.carbsPer100g,
+              fatPer100g: ing.fatPer100g,
+              category: '',
+              source: 'custom',
+              externalSourceId: null,
+              externalSourceName: null,
+              importedAt: null,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            }, userId);
+            const { error } = await supabase.from('ingredients').insert({ ...row, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+            if (error) console.warn('Ingredient upsert failed:', error.message);
+          }
+        }
+      }
+
       const riRows = recipe.ingredients.map((ing, idx) => ({
         id: crypto.randomUUID(),
         recipe_id: recipe.id,
