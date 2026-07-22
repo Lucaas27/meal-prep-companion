@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { Search, Plus, Trash2, Pencil, Carrot, Database } from 'lucide-react';
 import { IngredientFormDialog } from './IngredientFormDialog';
 import { Pagination } from '@/shared/components/Pagination';
-import { normaliseName, formatNutrient } from '@/shared/utils/format';
+import { normaliseName, formatNutrient, formatCalories } from '@/shared/utils/format';
 import { SOURCE_LABELS } from '../schemas/ingredient.schema';
 import { ExternalFoodSearchDialog } from '@/features/external-catalogue/components/ExternalFoodSearchDialog';
 
@@ -85,8 +85,10 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
           i.category.toLowerCase().includes(q),
       );
     }
-    if (categoryFilter !== 'all') {
-      list = list.filter((i) => (i.category || '') === categoryFilter);
+    if (categoryFilter === 'none') {
+      list = list.filter((i) => !i.category);
+    } else if (categoryFilter !== 'all') {
+      list = list.filter((i) => i.category === categoryFilter);
     }
     return list;
   }, [ingredients, search, categoryFilter]);
@@ -244,12 +246,10 @@ export default function IngredientCatalogue({ ingredients, onSave, onDelete }: P
                       <Badge variant={ing.source === 'starter' ? 'secondary' : 'outline'} className="text-[10px] font-medium">
                         {SOURCE_LABELS[ing.source] || ing.source}
                       </Badge>
-                      {ing.category && (
-                        <span className="text-[11px] text-muted-foreground">{ing.category}</span>
-                      )}
+                      <span className="text-[11px] text-muted-foreground">{ing.category || 'Uncategorised'}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{formatNutrient(ing.caloriesPer100g)} kcal</span>
+                      <span>{formatCalories(ing.caloriesPer100g)} kcal</span>
                       <span>{formatNutrient(ing.proteinPer100g)}g P</span>
                       <span>{formatNutrient(ing.carbsPer100g)}g C</span>
                       <span>{formatNutrient(ing.fatPer100g)}g F</span>

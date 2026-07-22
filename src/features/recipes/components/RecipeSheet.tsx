@@ -50,7 +50,7 @@ import {
 import IngredientRow from './IngredientRow';
 import NutritionSummary from './NutritionSummary';
 import { Plus, ShoppingBasket, Star, X, Check, ChevronsUpDown } from 'lucide-react';
-import { normaliseName, formatNutrient } from '@/shared/utils/format';
+import { normaliseName, formatNutrient, formatCalories } from '@/shared/utils/format';
 import { useConversionsForIngredients } from '@/features/ingredients/conversions/use-unit-conversions';
 
 const STARTER_TAGS = [
@@ -157,7 +157,16 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
     (i) => i.weight > 0,
   );
 
-  const totals = calcBatchTotals(validIngredients);
+  // ponytail: flatten Map<string, UnitConversion[]> to Map<string, number> (id → gramsPerUnit)
+  const flatConversions = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const convs of conversionsMap.values()) {
+      for (const c of convs) m.set(c.id, c.gramsPerUnit);
+    }
+    return m;
+  }, [conversionsMap]);
+
+  const totals = calcBatchTotals(validIngredients, flatConversions);
   const perPortion = portions > 0 ? calcPerPortion(totals, portions) : null;
   const canSave = name.trim().length > 0 && portions > 0 && validIngredients.length > 0;
 
@@ -295,7 +304,7 @@ function RecipeSheetForm({ recipe, onSave, onOpenChange, storedIngredients }: Fo
                               <span className={alreadyAdded ? 'text-muted-foreground' : ''}>{si.name}</span>
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {formatNutrient(si.caloriesPer100g)} kcal · {formatNutrient(si.proteinPer100g)}g P · {formatNutrient(si.carbsPer100g)}g C · {formatNutrient(si.fatPer100g)}g F
+                              {formatCalories(si.caloriesPer100g)} kcal · {formatNutrient(si.proteinPer100g)}g P · {formatNutrient(si.carbsPer100g)}g C · {formatNutrient(si.fatPer100g)}g F
                             </span>
                           </CommandItem>
                         );

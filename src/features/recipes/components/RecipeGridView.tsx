@@ -1,6 +1,6 @@
 import type { Recipe } from '../schemas/recipe.schema';
 import { calcBatchTotals, calcPerPortion } from '../utils/calculations';
-import { formatNutrient } from '@/shared/utils/format';
+import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -111,7 +111,7 @@ export function RecipeGridView({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
                   <div className="bg-muted/70 rounded-lg p-2.5 text-center">
                     <span className="block text-base font-semibold tracking-tight">
-                      {formatNutrient(per.caloriesPerPortion)}
+                      {formatCalories(per.caloriesPerPortion)}
                     </span>
                     <span className="block text-[11px] text-muted-foreground mt-0.5">kcal</span>
                   </div>

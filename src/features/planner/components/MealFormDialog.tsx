@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { MealPlanEntry } from '../schemas/meal-plan.schema';
 import type { Recipe } from '@/features/recipes/schemas/recipe.schema';
 import { calcBatchTotals, calcPerPortion } from '@/features/recipes/utils/calculations';
-import { formatNutrient } from '@/shared/utils/format';
+import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { makeId } from '@/shared/lib/ids';
 import {
   Dialog,
@@ -133,7 +133,7 @@ export function MealFormDialog({
                           <Check className={cn('mr-2 h-4 w-4', r.id === recipeId ? 'opacity-100' : 'opacity-0')} />
                           <span className="flex-1">{r.name}</span>
                           <span className="text-xs text-muted-foreground">
-                            {formatNutrient(getRecipeCalories(r))} kcal
+                            {formatCalories(getRecipeCalories(r))} kcal
                           </span>
                         </CommandItem>
                       ))}
@@ -170,7 +170,7 @@ export function MealFormDialog({
               <div className="space-y-1.5">
                 <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Per Serving</Label>
                 <div className="text-xs text-muted-foreground pt-2">
-                  {formatNutrient(per.caloriesPerPortion)} kcal · {formatNutrient(per.proteinPerPortion)}g P
+                  {formatCalories(per.caloriesPerPortion)} kcal · {formatNutrient(per.proteinPerPortion)}g P
                 </div>
               </div>
             )}

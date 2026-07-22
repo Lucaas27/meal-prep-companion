@@ -1,5 +1,5 @@
 import { calcIngredientCalories, calcIngredientProtein, calcIngredientCarbs, calcIngredientFat } from '@/features/recipes/utils/calculations';
-import { round1dp, formatNutrient } from '@/shared/utils/format';
+import { round1dp, formatNutrient, formatCalories } from '@/shared/utils/format';
 import type { Ingredient } from '@/features/recipes/schemas/recipe.schema';
 import type { UnitConversion } from '@/features/ingredients/conversions/unit-conversion.schema';
 import { Input } from '@/components/ui/input';
@@ -48,11 +48,12 @@ export default function IngredientRow({ ingredient, conversions = [], onChange, 
 
   const weight = ingredient.weight || 0;
   const gramsLabel = getGramsLabel(weight, unitStr, ingredient.unitConversionId, conversions);
+  const gramsWeight = getGramsValue(weight, unitStr, ingredient.unitConversionId, conversions);
 
-  const totalCal = weight > 0 ? round1dp(calcIngredientCalories(weight, ingredient.caloriesPer100g)) : 0;
-  const totalProt = weight > 0 ? round1dp(calcIngredientProtein(weight, ingredient.proteinPer100g)) : 0;
-  const totalCarbs = weight > 0 ? round1dp(calcIngredientCarbs(weight, ingredient.carbsPer100g)) : 0;
-  const totalFat = weight > 0 ? round1dp(calcIngredientFat(weight, ingredient.fatPer100g)) : 0;
+  const totalCal = gramsWeight > 0 ? round1dp(calcIngredientCalories(gramsWeight, ingredient.caloriesPer100g)) : 0;
+  const totalProt = gramsWeight > 0 ? round1dp(calcIngredientProtein(gramsWeight, ingredient.proteinPer100g)) : 0;
+  const totalCarbs = gramsWeight > 0 ? round1dp(calcIngredientCarbs(gramsWeight, ingredient.carbsPer100g)) : 0;
+  const totalFat = gramsWeight > 0 ? round1dp(calcIngredientFat(gramsWeight, ingredient.fatPer100g)) : 0;
 
   return (
     <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
@@ -103,7 +104,7 @@ export default function IngredientRow({ ingredient, conversions = [], onChange, 
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalCal)} kcal</span>
+        <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatCalories(totalCal)} kcal</span>
         <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalProt)}g P</span>
         <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalCarbs)}g C</span>
         <span className="text-xs font-medium bg-background px-2 py-0.5 rounded-md border">{formatNutrient(totalFat)}g F</span>
@@ -145,4 +146,24 @@ function getGramsLabel(weight: number, unit: string, conversionId: string | null
   }
 
   return '';
+}
+
+function getGramsValue(weight: number, unit: string, conversionId: string | null | undefined, conversions: UnitConversion[]): number {
+  if (!weight) return 0;
+
+  if (conversionId) {
+    const conv = conversions.find((c) => c.id === conversionId);
+    if (conv) {
+      const result = convertIngredientUnitToGrams(weight, conv.gramsPerUnit);
+      if (result.status === 'available') return result.grams!;
+    }
+    return 0;
+  }
+
+  if (unit !== 'g') {
+    const result = convertWeightToGrams(weight, unit as WeightUnit);
+    if (result.status === 'available') return result.grams!;
+  }
+
+  return weight;
 }

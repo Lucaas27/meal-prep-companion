@@ -11,7 +11,7 @@ import {
 } from '../hooks/use-meal-plan';
 import { getMonday, getWeekDays, formatDate, addWeeks, isSameDay } from '@/shared/utils/date';
 import { calcBatchTotals, calcPerPortion } from '@/features/recipes/utils/calculations';
-import { formatNutrient } from '@/shared/utils/format';
+import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { calculateWeekNutrition, calculateDayAverages } from '../utils/nutrition-summary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -227,7 +227,7 @@ export default function PlannerPage() {
         </div>
         {per && (
           <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground">
-            <span>{formatNutrient(per.caloriesPerPortion * e.servings)} kcal</span>
+            <span>{formatCalories(per.caloriesPerPortion * e.servings)} kcal</span>
             <span>{formatNutrient(per.proteinPerPortion * e.servings)}g P</span>
             <span>{formatNutrient(per.carbsPerPortion * e.servings)}g C</span>
             <span>{formatNutrient(per.fatPerPortion * e.servings)}g F</span>
@@ -263,7 +263,7 @@ export default function PlannerPage() {
       {!isLoading && !error && entries.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg border bg-card p-3 text-center">
-            <span className="block text-lg font-semibold tracking-tight">{formatNutrient(weekNutrition.calories)}</span>
+            <span className="block text-lg font-semibold tracking-tight">{formatCalories(weekNutrition.calories)}</span>
             <span className="block text-[10px] text-muted-foreground">kcal</span>
           </div>
           <div className="rounded-lg border bg-card p-3 text-center">
@@ -285,7 +285,7 @@ export default function PlannerPage() {
           )}
           {dayAverages && (
             <div className="col-span-full text-center text-[10px] text-muted-foreground">
-              Daily avg: {formatNutrient(dayAverages.calories)} kcal · {formatNutrient(dayAverages.protein)}g P · {formatNutrient(dayAverages.carbs)}g C · {formatNutrient(dayAverages.fat)}g F
+              Daily avg: {formatCalories(dayAverages.calories)} kcal · {formatNutrient(dayAverages.protein)}g P · {formatNutrient(dayAverages.carbs)}g C · {formatNutrient(dayAverages.fat)}g F
             </div>
           )}
         </div>
@@ -340,7 +340,7 @@ export default function PlannerPage() {
                 >
                   <span className="block font-semibold">{DAY_LABELS[idx]}</span>
                   <span className={cn('block text-lg font-bold mt-0.5', selectedDay === idx ? 'text-primary-foreground' : '')}>{day.getDate()}</span>
-                  {t && <span className="block text-[10px] mt-0.5 opacity-80">{formatNutrient(t.kcal)} kcal</span>}
+                  {t && <span className="block text-[10px] mt-0.5 opacity-80">{formatCalories(t.kcal)} kcal</span>}
                 </button>
               );
             })}

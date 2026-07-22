@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { StoredIngredient } from '../schemas/ingredient.schema';
+import type { ExternalFoodDetails } from '@/features/external-catalogue/types';
 import { makeId } from '@/shared/lib/ids';
 import { ingredientRepository } from '../repositories/ingredient.repository';
 import { useUnitConversions, useCreateUnitConversion, useUpdateUnitConversion, useDeleteUnitConversion } from '../conversions/use-unit-conversions';
@@ -27,7 +28,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { formatNutrient, formatCalories } from '@/shared/utils/format';
+import { useFoodDetails } from '@/features/external-catalogue/hooks';
 
 const CATEGORIES = ['Protein', 'Carbohydrate', 'Fat', 'Dairy', 'Vegetable', 'Fruit', 'Sauce', 'Other'];
 
@@ -59,7 +62,7 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
     setProtein(ingredient ? String(ingredient.proteinPer100g) : '');
     setCarbs(ingredient ? String(ingredient.carbsPer100g) : '');
     setFat(ingredient ? String(ingredient.fatPer100g) : '');
-    setCategory(ingredient?.category ?? '');
+    setCategory(ingredient?.category || 'none');
     setNameError('');
   }, [currentKey]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -71,14 +74,15 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
       setNameError('An ingredient with this name already exists.');
       return;
     }
+    const isCustom = ingredient?.source === 'custom';
     onSave({
       id: ingredient?.id ?? makeId(),
       name: normalised,
-      caloriesPer100g: Number(calories) || 0,
-      proteinPer100g: Number(protein) || 0,
-      carbsPer100g: Number(carbs) || 0,
-      fatPer100g: Number(fat) || 0,
-      category,
+      caloriesPer100g: isCustom ? (Number(calories) || 0) : (ingredient?.caloriesPer100g ?? 0),
+      proteinPer100g: isCustom ? (Number(protein) || 0) : (ingredient?.proteinPer100g ?? 0),
+      carbsPer100g: isCustom ? (Number(carbs) || 0) : (ingredient?.carbsPer100g ?? 0),
+      fatPer100g: isCustom ? (Number(fat) || 0) : (ingredient?.fatPer100g ?? 0),
+      category: category === 'none' ? '' : category,
       source: ingredient?.source ?? 'custom',
       externalSourceId: ingredient?.externalSourceId ?? null,
       externalSourceName: ingredient?.externalSourceName ?? null,
@@ -105,24 +109,48 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
               {nameError && <p className="text-xs text-destructive">{nameError}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="ing-cal" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Calories / 100g</Label>
-                <Input id="ing-cal" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="165" min="0" step="0.1" />
+            {ingredient && ingredient.source !== 'custom' ? (
+              <div>
+                <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Nutrition (per 100g)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-md bg-muted/50 p-2">
+                    <span className="block text-sm font-semibold">{formatCalories(ingredient.caloriesPer100g)}</span>
+                    <span className="block text-[10px] text-muted-foreground">Calories kcal</span>
+                  </div>
+                  <div className="rounded-md bg-muted/50 p-2">
+                    <span className="block text-sm font-semibold">{formatNutrient(ingredient.proteinPer100g)}</span>
+                    <span className="block text-[10px] text-muted-foreground">Protein g</span>
+                  </div>
+                  <div className="rounded-md bg-muted/50 p-2">
+                    <span className="block text-sm font-semibold">{formatNutrient(ingredient.carbsPer100g)}</span>
+                    <span className="block text-[10px] text-muted-foreground">Carbs g</span>
+                  </div>
+                  <div className="rounded-md bg-muted/50 p-2">
+                    <span className="block text-sm font-semibold">{formatNutrient(ingredient.fatPer100g)}</span>
+                    <span className="block text-[10px] text-muted-foreground">Fat g</span>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ing-prot" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Protein / 100g</Label>
-                <Input id="ing-prot" type="number" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="31" min="0" step="0.1" />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ing-cal" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Calories / 100g</Label>
+                  <Input id="ing-cal" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="165" min="0" step="0.1" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ing-prot" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Protein / 100g</Label>
+                  <Input id="ing-prot" type="number" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="31" min="0" step="0.1" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ing-carbs" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Carbs / 100g</Label>
+                  <Input id="ing-carbs" type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="0" min="0" step="0.1" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ing-fat" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fat / 100g</Label>
+                  <Input id="ing-fat" type="number" value={fat} onChange={(e) => setFat(e.target.value)} placeholder="0" min="0" step="0.1" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ing-carbs" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Carbs / 100g</Label>
-                <Input id="ing-carbs" type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="0" min="0" step="0.1" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ing-fat" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fat / 100g</Label>
-                <Input id="ing-fat" type="number" value={fat} onChange={(e) => setFat(e.target.value)} placeholder="0" min="0" step="0.1" />
-              </div>
-            </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="ing-cat" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
@@ -134,6 +162,10 @@ export function IngredientFormDialog({ open, onOpenChange, ingredient, onSave }:
                 </SelectContent>
               </Select>
             </div>
+
+            {isEditing && ingredient && ingredient.source !== 'custom' && ingredient.externalSourceId && (
+              <ServingOptionsSection provider={ingredient.source} externalId={ingredient.externalSourceId} />
+            )}
 
             {isEditing && ingredient && (
               <ConversionSection ingredientId={ingredient.id} ingredientName={ingredient.name} />
@@ -294,6 +326,30 @@ function ConversionSection({ ingredientId, ingredientName }: { ingredientId: str
               </Button>
             )}
           </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ServingOptionsSection({ provider, externalId }: { provider: string; externalId: string }) {
+  const { data: details, isLoading } = useFoodDetails(provider, externalId);
+
+  if (isLoading) return <div className="flex items-center justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>;
+  if (!details?.servingOptions.length) return null;
+
+  return (
+    <>
+      <Separator />
+      <div>
+        <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Serving Options</Label>
+        <div className="space-y-1 mt-2">
+          {details.servingOptions.map((s, i) => (
+            <div key={i} className="rounded-md bg-muted/50 p-2">
+              <span className="font-medium text-xs">{s.label}</span>
+              <span className="text-[10px] text-muted-foreground block">{s.sourceDescription}</span>
+            </div>
+          ))}
         </div>
       </div>
     </>

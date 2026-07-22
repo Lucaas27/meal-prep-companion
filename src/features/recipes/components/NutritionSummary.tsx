@@ -1,4 +1,4 @@
-import { formatNutrient } from '@/shared/utils/format';
+import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import type { IngredientTotals, PerPortion } from '../utils/calculations';
 import { Separator } from '@/components/ui/separator';
 
@@ -15,7 +15,7 @@ export default function NutritionSummary({ totals, perPortion, portions }: Props
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Batch Totals</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div>
-            <span className="block text-lg font-semibold tracking-tight">{formatNutrient(totals.totalCalories)}</span>
+            <span className="block text-lg font-semibold tracking-tight">{formatCalories(totals.totalCalories)}</span>
             <span className="block text-[11px] text-muted-foreground mt-0.5">kcal</span>
           </div>
           <div>
@@ -43,7 +43,7 @@ export default function NutritionSummary({ totals, perPortion, portions }: Props
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div className="bg-primary/5 rounded-lg p-3">
                 <span className="block text-xl font-semibold tracking-tight text-primary">
-                  {formatNutrient(perPortion.caloriesPerPortion)}
+                  {formatCalories(perPortion.caloriesPerPortion)}
                 </span>
                 <span className="block text-[11px] text-muted-foreground mt-0.5">kcal</span>
               </div>

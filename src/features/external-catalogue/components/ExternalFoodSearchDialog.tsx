@@ -5,7 +5,7 @@ import type { StoredIngredient } from '@/features/ingredients/schemas/ingredient
 import type { UnitConversion } from '@/features/ingredients/conversions/unit-conversion.schema';
 import { INGREDIENT_UNITS } from '@/shared/units/types';
 import { makeId } from '@/shared/lib/ids';
-import { formatNutrient } from '@/shared/utils/format';
+import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,9 +30,6 @@ const CATEGORY_IDS: Record<string, string> = {
   'Fats and Oils': 'Fat', 'Dairy and Egg Products': 'Dairy',
   'Vegetables': 'Vegetable', 'Fruits and Fruit Juices': 'Fruit',
 };
-
-// ponytail: hand-written weight table avoids pulling in a conversion lib
-const WEIGHT_TO_G: Record<string, number> = { g: 1, kg: 1000, oz: 28.35, lb: 453.6, ml: 1, l: 1000 };
 
 interface Props {
   open: boolean;
@@ -158,33 +155,12 @@ function ImportForm({
   submitting: boolean;
   onSave: (name: string, values: { caloriesPer100g: number; proteinPer100g: number; carbsPer100g: number; fatPer100g: number }, category: string, conversions: UnitConversion[]) => void;
 }) {
-  const [scaleQty, setScaleQty] = useState('');
-
-  // ponytail: reuse serving options list for scale dropdown, default, and conversions
   const nonWeightUnits = useMemo(() =>
     details.servingOptions.filter((s) => s.unit && INGREDIENT_UNITS.includes(s.unit as typeof INGREDIENT_UNITS[number])),
   [details]);
 
-  const [scaleUnit, setScaleUnit] = useState('weight:g');
-
   const [category, setCategory] = useState(CATEGORY_IDS[details.category || ''] || 'none');
   const [acceptedMap, setAcceptedMap] = useState<Record<number, boolean>>({});
-
-  // ponytail: always offer weight units + any ingredient-specific serving options
-  const unitOptions = [
-    ...Object.keys(WEIGHT_TO_G).map((u) => ({ value: `weight:${u}`, label: u })),
-    ...details.servingOptions.map((s, i) => ({ value: String(i), label: s.label || s.unit || `Option ${i + 1}` })),
-  ];
-
-  const gramsPerScaleUnit = useMemo(() => {
-    if (!scaleUnit) return 0;
-    if (scaleUnit.startsWith('weight:')) return WEIGHT_TO_G[scaleUnit.slice(7)] ?? 0;
-    return details.servingOptions[Number(scaleUnit)]?.gramsPerUnit ?? 0;
-  }, [scaleUnit, details]);
-
-  const scaleFactor = scaleQty && gramsPerScaleUnit > 0
-    ? (Number(scaleQty) * gramsPerScaleUnit) / 100
-    : 1;
 
   const handleSave = () => {
     const accepted: UnitConversion[] = nonWeightUnits
@@ -233,44 +209,10 @@ function ImportForm({
         </Select>
       </div>
 
-      {unitOptions.length > 0 && (
-        <div>
-          <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Scale to serving</Label>
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Quantity</Label>
-              <Input type="number" value={scaleQty} onChange={(e) => setScaleQty(e.target.value)} placeholder="e.g. 200" min="0" />
-            </div>
-            <div className="flex-1 space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Unit</Label>
-              <Select value={scaleUnit} onValueChange={setScaleUnit}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  {unitOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {scaleUnit && gramsPerScaleUnit === 0 && (
-            <p className="text-[10px] text-destructive mt-1">Unknown conversion for this unit.</p>
-          )}
-
-          {scaleQty && scaleUnit && gramsPerScaleUnit > 0 && (
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <NutritionItem label="Calories" value={details.caloriesPer100g != null ? Math.round(details.caloriesPer100g * scaleFactor) : null} unit="kcal" />
-              <NutritionItem label="Protein" value={details.proteinPer100g != null ? Math.round(details.proteinPer100g * scaleFactor) : null} unit="g" />
-              <NutritionItem label="Carbs" value={details.carbohydratesPer100g != null ? Math.round(details.carbohydratesPer100g * scaleFactor) : null} unit="g" />
-              <NutritionItem label="Fat" value={details.fatPer100g != null ? Math.round(details.fatPer100g * scaleFactor) : null} unit="g" />
-            </div>
-          )}
-        </div>
-      )}
-
       <div>
         <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Nutrition (per 100g)</Label>
         <div className="grid grid-cols-2 gap-2">
-          <NutritionItem label="Calories" value={details.caloriesPer100g} unit="kcal" />
+          <NutritionItem label="Calories" value={details.caloriesPer100g} unit="kcal" special />
           <NutritionItem label="Protein" value={details.proteinPer100g} unit="g" />
           <NutritionItem label="Carbs" value={details.carbohydratesPer100g} unit="g" />
           <NutritionItem label="Fat" value={details.fatPer100g} unit="g" />
@@ -320,6 +262,12 @@ function ImportForm({
         </>
       )}
 
+      {details.sourceUrl && (
+        <p className="text-[10px] text-muted-foreground">
+          Source: <a href={details.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">USDA FoodData Central</a>
+        </p>
+      )}
+
       <Button className="w-full" onClick={handleSave} disabled={submitting}>
         {submitting && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
         <Database className="h-4 w-4 mr-1.5" />
@@ -350,8 +298,8 @@ function ResultRow({ item, onClick }: { item: ExternalFoodSearchResult; onClick:
   );
 }
 
-function NutritionItem({ label, value, unit }: { label: string; value: number | null; unit: string }) {
-  const display = value != null ? formatNutrient(value) : '—';
+function NutritionItem({ label, value, unit, special }: { label: string; value: number | null; unit: string; special?: boolean }) {
+  const display = value != null ? (special ? formatCalories(value) : formatNutrient(value)) : '—';
   return (
     <div className="rounded-md bg-muted/50 p-2">
       <span className="block text-sm font-semibold">{display}</span>

@@ -1,5 +1,5 @@
 import { calcBatchTotals, calcPerPortion } from '../utils/calculations';
-import { formatNutrient } from '@/shared/utils/format';
+import { formatNutrient, formatCalories } from '@/shared/utils/format';
 import {
   Table,
   TableBody,
@@ -107,7 +107,7 @@ export function RecipeListView({
                 </TableCell>
                 <TableCell className="font-medium">{recipe.name}</TableCell>
                 <TableCell className="text-right tabular-nums">
-                  {per ? formatNutrient(per.caloriesPerPortion) : '—'}
+                  {per ? formatCalories(per.caloriesPerPortion) : '—'}
                 </TableCell>
                 <TableCell className="text-right tabular-nums hidden sm:table-cell">
                   {per ? `${formatNutrient(per.proteinPerPortion)}g` : '—'}
