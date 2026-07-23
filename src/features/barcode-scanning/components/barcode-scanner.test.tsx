@@ -170,4 +170,81 @@ describe('BarcodeScanner', () => {
     await waitFor(() => expect(decodeFromVideoDevice).toHaveBeenCalled());
     expect(onDetected).toHaveBeenCalledWith('0036000291452');
   });
+
+  it('shows torch and refocus controls when the camera supports them', async () => {
+    const user = userEvent.setup();
+    const { stream } = makeMediaStream();
+    const controls = {
+      stop: vi.fn(),
+      switchTorch: vi.fn(),
+      streamVideoCapabilitiesGet: vi.fn(() => ({ torch: true, focusMode: ['continuous', 'single-shot'] })),
+      streamVideoConstraintsApply: vi.fn(),
+    };
+
+    decodeFromConstraints.mockImplementation(async (_constraints, preview) => {
+      if (preview instanceof HTMLVideoElement) {
+        preview.srcObject = stream;
+      }
+      return controls;
+    });
+
+    render(<BarcodeScanner onDetected={vi.fn()} onCancel={vi.fn()} />);
+
+    await user.click(screen.getAllByRole('button', { name: /start camera/i })[0]);
+
+    expect(await screen.findByRole('button', { name: /refocus/i })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /torch on/i })).not.toBeNull();
+  });
+
+  it('toggles torch when supported', async () => {
+    const user = userEvent.setup();
+    const { stream } = makeMediaStream();
+    const controls = {
+      stop: vi.fn(),
+      switchTorch: vi.fn().mockResolvedValue(undefined),
+      streamVideoCapabilitiesGet: vi.fn(() => ({ torch: true, focusMode: [] })),
+      streamVideoConstraintsApply: vi.fn(),
+    };
+
+    decodeFromConstraints.mockImplementation(async (_constraints, preview) => {
+      if (preview instanceof HTMLVideoElement) {
+        preview.srcObject = stream;
+      }
+      return controls;
+    });
+
+    render(<BarcodeScanner onDetected={vi.fn()} onCancel={vi.fn()} />);
+
+    await user.click(screen.getAllByRole('button', { name: /start camera/i })[0]);
+    await user.click(await screen.findByRole('button', { name: /torch on/i }));
+
+    expect(controls.switchTorch).toHaveBeenCalledWith(true);
+  });
+
+  it('applies autofocus when refocus is requested', async () => {
+    const user = userEvent.setup();
+    const { stream } = makeMediaStream();
+    const controls = {
+      stop: vi.fn(),
+      streamVideoCapabilitiesGet: vi.fn(() => ({ focusMode: ['single-shot'] })),
+      streamVideoConstraintsApply: vi.fn(),
+    };
+
+    decodeFromConstraints.mockImplementation(async (_constraints, preview) => {
+      if (preview instanceof HTMLVideoElement) {
+        preview.srcObject = stream;
+      }
+      return controls;
+    });
+
+    render(<BarcodeScanner onDetected={vi.fn()} onCancel={vi.fn()} />);
+
+    await user.click(screen.getAllByRole('button', { name: /start camera/i })[0]);
+    await user.click(await screen.findByRole('button', { name: /refocus/i }));
+
+    expect(controls.streamVideoConstraintsApply).toHaveBeenCalledWith(
+      { advanced: [{ focusMode: 'single-shot' }] },
+      expect.any(Function),
+    );
+  });
 });

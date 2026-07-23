@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { BarcodeFormat, BrowserMultiFormatReader } from '@zxing/browser';
 import type { IScannerControls } from '@zxing/browser';
-import { Camera, CameraOff, CheckCircle2, Keyboard, ScanLine, XCircle } from 'lucide-react';
+import { Camera, CameraOff, CheckCircle2, Flashlight, Focus, Keyboard, ScanLine, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,14 @@ const SUPPORTED_FORMATS = [
 ];
 
 type ScannerStatus = 'idle' | 'starting' | 'scanning' | 'detected' | 'error';
+type ExperimentalMediaTrackCapabilities = MediaTrackCapabilities & {
+  torch?: boolean;
+  focusMode?: string[];
+};
+type ExperimentalMediaTrackConstraintSet = MediaTrackConstraintSet & {
+  torch?: boolean;
+  focusMode?: string;
+};
 
 interface BarcodeScannerProps {
   onDetected: (barcode: string) => void;
@@ -40,6 +48,9 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
   const [manualBarcode, setManualBarcode] = useState('');
   const [manualError, setManualError] = useState('');
   const [manualMode, setManualMode] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchEnabled, setTorchEnabled] = useState(false);
+  const [focusSupported, setFocusSupported] = useState(false);
 
   const inputId = useId();
   const canStartCamera = useMemo(() => !!(globalThis.isSecureContext && navigator.mediaDevices?.getUserMedia), []);
@@ -62,6 +73,9 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
   const stopScanner = useCallback(() => {
     controlsRef.current?.stop();
     controlsRef.current = null;
+    setTorchEnabled(false);
+    setTorchSupported(false);
+    setFocusSupported(false);
     stopTracks();
   }, [stopTracks]);
 
@@ -144,6 +158,18 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
         controlsRef.current = await reader.decodeFromVideoDevice(undefined, videoRef.current ?? undefined, handleResult);
       }
 
+      const capabilities = controlsRef.current?.streamVideoCapabilitiesGet?.((track) => [track]) as ExperimentalMediaTrackCapabilities | undefined;
+      const focusModes = Array.isArray(capabilities?.focusMode)
+        ? capabilities.focusMode
+        : [];
+      setTorchSupported(!!controlsRef.current?.switchTorch || !!capabilities?.torch);
+      setFocusSupported(focusModes.includes('continuous') || focusModes.includes('single-shot'));
+
+      if (focusModes.includes('continuous')) {
+        // ponytail: ask for continuous autofocus when the browser advertises it; manual refocus stays as the fallback.
+        controlsRef.current?.streamVideoConstraintsApply?.({ advanced: [{ focusMode: 'continuous' } as ExperimentalMediaTrackConstraintSet] }, (track) => [track]);
+      }
+
       setStatus('scanning');
     } catch (error) {
       stopScanner();
@@ -164,6 +190,41 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
     setStatus('detected');
     onDetected(normalized);
   }, [manualBarcode, onDetected, stopScanner]);
+
+  const handleToggleTorch = useCallback(async () => {
+    if (!controlsRef.current) return;
+    const nextValue = !torchEnabled;
+
+    try {
+      if (controlsRef.current.switchTorch) {
+        await controlsRef.current.switchTorch(nextValue);
+      } else {
+        controlsRef.current.streamVideoConstraintsApply?.({ advanced: [{ torch: nextValue } as ExperimentalMediaTrackConstraintSet] }, (track) => [track]);
+      }
+      setTorchEnabled(nextValue);
+    } catch {
+      setTorchEnabled(false);
+      setErrorMessage('Torch control is not available on this device.');
+    }
+  }, [torchEnabled]);
+
+  const handleRefocus = useCallback(() => {
+    if (!controlsRef.current?.streamVideoCapabilitiesGet || !controlsRef.current.streamVideoConstraintsApply) return;
+
+    const capabilities = controlsRef.current.streamVideoCapabilitiesGet((track) => [track]) as ExperimentalMediaTrackCapabilities;
+    const focusModes = Array.isArray(capabilities?.focusMode)
+      ? capabilities.focusMode
+      : [];
+
+    if (focusModes.includes('single-shot')) {
+      controlsRef.current.streamVideoConstraintsApply({ advanced: [{ focusMode: 'single-shot' } as ExperimentalMediaTrackConstraintSet] }, (track) => [track]);
+      return;
+    }
+
+    if (focusModes.includes('continuous')) {
+      controlsRef.current.streamVideoConstraintsApply({ advanced: [{ focusMode: 'continuous' } as ExperimentalMediaTrackConstraintSet] }, (track) => [track]);
+    }
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -233,9 +294,23 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
           )}
 
           {previewVisible && (
-            <Button variant="outline" onClick={stopScanner}>
-              Stop camera
-            </Button>
+            <>
+              <Button variant="outline" onClick={stopScanner}>
+                Stop camera
+              </Button>
+              {focusSupported && (
+                <Button variant="outline" onClick={handleRefocus}>
+                  <Focus className="mr-1.5 h-4 w-4" />
+                  Refocus
+                </Button>
+              )}
+              {torchSupported && (
+                <Button variant="outline" onClick={handleToggleTorch}>
+                  <Flashlight className="mr-1.5 h-4 w-4" />
+                  {torchEnabled ? 'Torch off' : 'Torch on'}
+                </Button>
+              )}
+            </>
           )}
 
           <Button variant="outline" onClick={() => setManualMode((value) => !value)}>
