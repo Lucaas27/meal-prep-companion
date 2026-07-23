@@ -4,11 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { BarcodeScanner } from './barcode-scanner';
 
 const decodeFromVideoDevice = vi.fn();
+const decodeFromConstraints = vi.fn();
 
 vi.mock('@zxing/browser', async () => {
   const actual = await vi.importActual<typeof import('@zxing/browser')>('@zxing/browser');
   class MockBrowserMultiFormatReader {
     possibleFormats = [];
+    decodeFromConstraints = decodeFromConstraints;
     decodeFromVideoDevice = decodeFromVideoDevice;
   }
 
@@ -30,6 +32,7 @@ function makeMediaStream() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  decodeFromConstraints.mockReset();
   decodeFromVideoDevice.mockReset();
   vi.stubGlobal('isSecureContext', true);
   vi.stubGlobal('navigator', {
@@ -50,6 +53,7 @@ afterEach(() => {
 describe('BarcodeScanner', () => {
   it('does not start camera access until the user clicks start', () => {
     render(<BarcodeScanner onDetected={vi.fn()} onCancel={vi.fn()} />);
+    expect(decodeFromConstraints).not.toHaveBeenCalled();
     expect(decodeFromVideoDevice).not.toHaveBeenCalled();
   });
 
@@ -58,7 +62,7 @@ describe('BarcodeScanner', () => {
     const onDetected = vi.fn();
     const { stream, track } = makeMediaStream();
 
-    decodeFromVideoDevice.mockImplementation(async (_deviceId, preview, callback) => {
+    decodeFromConstraints.mockImplementation(async (_constraints, preview, callback) => {
       if (preview instanceof HTMLVideoElement) {
         preview.srcObject = stream;
       }
@@ -90,6 +94,7 @@ describe('BarcodeScanner', () => {
   it('shows a permission denied error and allows manual fallback', async () => {
     const user = userEvent.setup();
 
+    decodeFromConstraints.mockRejectedValue(new DOMException('denied', 'NotAllowedError'));
     decodeFromVideoDevice.mockRejectedValue(new DOMException('denied', 'NotAllowedError'));
 
     render(<BarcodeScanner onDetected={vi.fn()} onCancel={vi.fn()} />);
@@ -104,7 +109,7 @@ describe('BarcodeScanner', () => {
     const { stream, track } = makeMediaStream();
     const controls = { stop: vi.fn() };
 
-    decodeFromVideoDevice.mockImplementation(async (_deviceId, preview) => {
+    decodeFromConstraints.mockImplementation(async (_constraints, preview) => {
       if (preview instanceof HTMLVideoElement) {
         preview.srcObject = stream;
       }
@@ -127,7 +132,7 @@ describe('BarcodeScanner', () => {
 
     let callbackRef: ((result: { getText: () => string } | undefined) => void) | undefined;
 
-    decodeFromVideoDevice.mockImplementation(async (_deviceId, preview, callback) => {
+    decodeFromConstraints.mockImplementation(async (_constraints, preview, callback) => {
       if (preview instanceof HTMLVideoElement) {
         preview.srcObject = stream;
       }
@@ -142,5 +147,27 @@ describe('BarcodeScanner', () => {
     callbackRef?.({ getText: () => '036000291452' });
 
     await waitFor(() => expect(onDetected).toHaveBeenCalledTimes(1));
+  });
+
+  it('falls back to generic video device selection if custom constraints fail', async () => {
+    const user = userEvent.setup();
+    const onDetected = vi.fn();
+    const { stream } = makeMediaStream();
+
+    decodeFromConstraints.mockRejectedValue(new DOMException('unsupported', 'OverconstrainedError'));
+    decodeFromVideoDevice.mockImplementation(async (_deviceId, preview, callback) => {
+      if (preview instanceof HTMLVideoElement) {
+        preview.srcObject = stream;
+      }
+      callback({ getText: () => '036000291452' }, undefined, { stop: vi.fn() });
+      return { stop: vi.fn() };
+    });
+
+    render(<BarcodeScanner onDetected={onDetected} onCancel={vi.fn()} />);
+
+    await user.click(screen.getAllByRole('button', { name: /start camera/i })[0]);
+
+    await waitFor(() => expect(decodeFromVideoDevice).toHaveBeenCalled());
+    expect(onDetected).toHaveBeenCalledWith('0036000291452');
   });
 });

@@ -113,17 +113,36 @@ export function BarcodeScanner({ onDetected, onCancel, isOpen = true }: BarcodeS
     setStatus('starting');
 
     try {
-      const reader = new BrowserMultiFormatReader();
+      const reader = new BrowserMultiFormatReader(undefined, {
+        delayBetweenScanAttempts: 120,
+        delayBetweenScanSuccess: 400,
+      });
       reader.possibleFormats = SUPPORTED_FORMATS;
       readerRef.current = reader;
 
-      controlsRef.current = await reader.decodeFromVideoDevice(undefined, videoRef.current ?? undefined, (result) => {
+      const handleResult = (result: { getText: () => string } | undefined) => {
         if (!result) return;
 
         const normalized = normalizeBarcode(result.getText());
         if (!normalized) return;
         handleDetected(normalized);
-      });
+      };
+
+      const constraints: MediaStreamConstraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      };
+
+      try {
+        // ask for the rear camera and more pixels first; fall back once if the browser rejects the constraint set.
+        controlsRef.current = await reader.decodeFromConstraints(constraints, videoRef.current ?? undefined, handleResult);
+      } catch {
+        controlsRef.current = await reader.decodeFromVideoDevice(undefined, videoRef.current ?? undefined, handleResult);
+      }
 
       setStatus('scanning');
     } catch (error) {
